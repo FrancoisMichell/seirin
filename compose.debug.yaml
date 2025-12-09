@@ -1,0 +1,49 @@
+services:
+  seirin:
+    image: seirin-dev
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: builder
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+      RUN_MIGRATIONS: "false"
+    ports:
+      - 3000:3000
+      - 9229:9229
+    command: ["sh", "-c", "npm ci && npm run start:debug"]
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: seirin
+      POSTGRES_PASSWORD: seirin_password
+      POSTGRES_DB: seirin_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  pgdata:

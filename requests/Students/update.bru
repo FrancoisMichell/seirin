@@ -1,0 +1,22 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{host}}/students/de8c9993-01f9-4c4b-8b78-051c23a61a8d
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Teste dos Santos 2"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
