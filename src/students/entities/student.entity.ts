@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Belt } from '../../common/enums';
 
 @Entity()
 export class Student {
@@ -19,6 +20,27 @@ export class Student {
     default: true,
   })
   isActive: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: Belt,
+    default: Belt.White,
+  })
+  belt: Belt;
+
+  @Column({
+    name: 'birthday',
+    type: 'date',
+    nullable: true,
+  })
+  birthday: Date;
+
+  @Column({
+    name: 'training_since',
+    type: 'date',
+    nullable: true,
+  })
+  trainingSince: Date;
 
   @CreateDateColumn({
     name: 'created_at',
