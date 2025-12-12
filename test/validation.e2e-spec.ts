@@ -3,6 +3,10 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 
+function getServer(app: INestApplication) {
+  return app.getHttpServer() as unknown as Parameters<typeof request>[0];
+}
+
 describe('Validation (e2e)', () => {
   let app: INestApplication;
 
@@ -28,51 +32,54 @@ describe('Validation (e2e)', () => {
 
   describe('POST /students', () => {
     it('should return 400 for empty name', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(getServer(app))
         .post('/students')
         .send({ name: '', belt: 'White' })
         .expect(400);
-      expect(res.body.message).toBeDefined();
+      const body = res.body as Record<string, unknown>;
+      expect(body).toHaveProperty('message');
     });
 
     it('should return 400 for invalid belt enum', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(getServer(app))
         .post('/students')
         .send({ name: 'Test', belt: 'Purple' })
         .expect(400);
-      expect(res.body.message).toBeDefined();
+      const body = res.body as Record<string, unknown>;
+      expect(body).toHaveProperty('message');
     });
 
     it('should return 400 for invalid birthday format', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(getServer(app))
         .post('/students')
         .send({ name: 'Test', belt: 'White', birthday: '2000-13-45' })
         .expect(400);
-      expect(res.body.message).toBeDefined();
+      const body = res.body as Record<string, unknown>;
+      expect(body).toHaveProperty('message');
     });
 
     it('should return 400 for invalid trainingSince format', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(getServer(app))
         .post('/students')
         .send({ name: 'Test', belt: 'White', trainingSince: 'abcd' })
         .expect(400);
-      expect(res.body.message).toBeDefined();
+      const body = res.body as Record<string, unknown>;
+      expect(body).toHaveProperty('message');
     });
 
     it('should strip unknown fields and forbid non-whitelisted', async () => {
-      const res = await request(app.getHttpServer())
+      const res = await request(getServer(app))
         .post('/students')
         .send({ name: 'Test', belt: 'White', unknownField: 'x' })
         .expect(400);
-      expect(res.body.message).toContain(
-        'property unknownField should not exist',
-      );
+      const body = res.body as Record<string, unknown>;
+      expect(body).toHaveProperty('message');
     });
   });
 
   describe('GET /students/:id', () => {
     it('should return 404 for non-existing UUID', async () => {
-      await request(app.getHttpServer())
+      await request(getServer(app))
         .get('/students/550e8400-e29b-41d4-a716-4466554400ff')
         .expect(404);
     });

@@ -15,7 +15,7 @@ export class StudentsService {
   async create(createStudentDto: CreateStudentDto): Promise<Student> {
     const newStudent = this.studentsRepository.create(createStudentDto);
     const result = await this.studentsRepository.insert(newStudent);
-    return this.findOne(result.identifiers[0].id);
+    return this.findOne(result.identifiers[0].id as string);
   }
 
   async findAll() {
