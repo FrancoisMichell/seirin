@@ -23,7 +23,8 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install ONLY production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Skip lifecycle scripts (prepare) to avoid Husky execution in production
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
