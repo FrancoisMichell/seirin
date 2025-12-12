@@ -1,8 +1,5 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-echo "🔍 Type checking..."
+echo "Type checking..."
 tsc --noEmit
 
-echo "🧪 Running full test suite..."
+echo "Running tests..."
 npm test
