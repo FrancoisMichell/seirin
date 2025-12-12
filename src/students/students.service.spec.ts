@@ -42,11 +42,13 @@ describe('StudentsService', () => {
       const createdStudent = { id: '1', ...createStudentDto };
 
       mockRepository.create!.mockReturnValue(createdStudent);
-      mockRepository.insert!.mockResolvedValue(createdStudent);
+      mockRepository.insert!.mockResolvedValue({ identifiers: [{ id: '1' }] });
+      mockRepository.findOneBy!.mockResolvedValue(createdStudent);
 
       const result = await service.create(createStudentDto);
       expect(mockRepository.create).toHaveBeenCalledWith(createStudentDto);
       expect(mockRepository.insert).toHaveBeenCalledWith(createdStudent);
+      expect(mockRepository.findOneBy).toHaveBeenCalledWith({ id: '1' });
       expect(result).toEqual(createdStudent);
     });
 
@@ -59,11 +61,13 @@ describe('StudentsService', () => {
       };
       const createdStudent = { id: '2', ...createStudentDto };
       mockRepository.create!.mockReturnValue(createdStudent);
-      mockRepository.insert!.mockResolvedValue(createdStudent);
+      mockRepository.insert!.mockResolvedValue({ identifiers: [{ id: '2' }] });
+      mockRepository.findOneBy!.mockResolvedValue(createdStudent);
 
       const result = await service.create(createStudentDto);
       expect(mockRepository.create).toHaveBeenCalledWith(createStudentDto);
       expect(mockRepository.insert).toHaveBeenCalledWith(createdStudent);
+      expect(mockRepository.findOneBy).toHaveBeenCalledWith({ id: '2' });
       expect(result).toEqual(createdStudent);
     });
 

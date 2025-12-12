@@ -6,6 +6,8 @@ config();
 
 const configService = new ConfigService();
 
+const isTest = process.env.NODE_ENV === 'test';
+
 export const datasourceOptions: DataSourceOptions = {
   // @ts-expect-error // TypeORM expects predefined strings for type
   type: configService.getOrThrow<string>('DB_TYPE'),
@@ -14,7 +16,7 @@ export const datasourceOptions: DataSourceOptions = {
   username: configService.getOrThrow<string>('DB_USER'),
   password: configService.getOrThrow<string>('DB_PASSWORD'),
   database: configService.getOrThrow<string>('DB_NAME'),
-  entities: ['dist/**/*.entity.js'],
+  entities: isTest ? ['src/**/*.entity.ts'] : ['dist/**/*.entity.js'],
   migrations: ['dist/db/migrations/*.js'],
   migrationsTableName: 'migrations',
   migrationsRun: false,

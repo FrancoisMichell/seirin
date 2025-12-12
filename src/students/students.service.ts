@@ -12,9 +12,10 @@ export class StudentsService {
     private studentsRepository: Repository<Student>,
   ) {}
 
-  async create(createStudentDto: CreateStudentDto) {
+  async create(createStudentDto: CreateStudentDto): Promise<Student> {
     const newStudent = this.studentsRepository.create(createStudentDto);
-    return await this.studentsRepository.insert(newStudent);
+    const result = await this.studentsRepository.insert(newStudent);
+    return this.findOne(result.identifiers[0].id);
   }
 
   async findAll() {
