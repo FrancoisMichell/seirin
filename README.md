@@ -1,5 +1,10 @@
 # Seirin - Student Management API
 
+[![CI](https://github.com/FrancoisMichell/seirin/actions/workflows/ci.yml/badge.svg)](https://github.com/FrancoisMichell/seirin/actions/workflows/ci.yml)
+[![Docker](https://github.com/FrancoisMichell/seirin/actions/workflows/docker.yml/badge.svg)](https://github.com/FrancoisMichell/seirin/actions/workflows/docker.yml)
+[![GHCR](https://img.shields.io/badge/GHCR-seirin-blue?logo=github)](https://ghcr.io/francoismichell/seirin)
+[![Node](https://img.shields.io/badge/node-20.x%20%7C%2022.x-339933?logo=node.js&logoColor=white)](#)
+
 API para gerenciamento de alunos de escola de artes marciais (Karatê), construída com NestJS, TypeORM e PostgreSQL.
 
 ## 🚀 Funcionalidades
@@ -48,10 +53,20 @@ docker compose -f compose.debug.yaml down
 ```
 
 **Acessar:**
+
 - API: http://localhost:3000
 - **Swagger/API Docs: http://localhost:3000/api** 📚
 - Adminer (DB Manager): http://localhost:8080
 - Health Check: http://localhost:3000/health
+
+### Docker Compose e .env
+
+Os arquivos [compose.yaml](compose.yaml) e [compose.debug.yaml](compose.debug.yaml) carregam variáveis do [.env](.env) para a aplicação e o Postgres:
+
+- App: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `RUN_MIGRATIONS`.
+- Postgres: `POSTGRES_DB` ← `DB_NAME`, `POSTGRES_USER` ← `DB_USER`, `POSTGRES_PASSWORD` ← `DB_PASSWORD`.
+
+Isso mantém as credenciais centralizadas no `.env` e evita duplicação.
 
 ### Modo de produção
 
@@ -87,13 +102,13 @@ A documentação interativa está disponível em:
 
 ### Endpoints principais:
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/students` | Criar novo aluno |
-| GET | `/students` | Listar todos os alunos |
-| GET | `/students/:id` | Buscar aluno por ID |
-| PATCH | `/students/:id` | Atualizar aluno |
-| GET | `/health` | Health check |
+| Método | Endpoint        | Descrição              |
+| ------ | --------------- | ---------------------- |
+| POST   | `/students`     | Criar novo aluno       |
+| GET    | `/students`     | Listar todos os alunos |
+| GET    | `/students/:id` | Buscar aluno por ID    |
+| PATCH  | `/students/:id` | Atualizar aluno        |
+| GET    | `/health`       | Health check           |
 
 ### Exemplo de requisição (POST /students):
 
@@ -107,6 +122,7 @@ A documentação interativa está disponível em:
 ```
 
 ### Níveis de faixa (Belt):
+
 - `White` - Branca
 - `Yellow` - Amarela
 - `Orange` - Laranja
@@ -148,16 +164,16 @@ DB_HOST=127.0.0.1 npm run migration:revert
 
 ### Estrutura da tabela `student`:
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| id | UUID | Identificador único |
-| name | VARCHAR | Nome completo |
-| belt | ENUM | Nível da faixa |
-| birthday | DATE | Data de nascimento (opcional) |
-| training_since | DATE | Início do treinamento (opcional) |
-| is_active | BOOLEAN | Status ativo/inativo |
-| created_at | TIMESTAMP | Data de criação |
-| updated_at | TIMESTAMP | Data de atualização |
+| Campo          | Tipo      | Descrição                        |
+| -------------- | --------- | -------------------------------- |
+| id             | UUID      | Identificador único              |
+| name           | VARCHAR   | Nome completo                    |
+| belt           | ENUM      | Nível da faixa                   |
+| birthday       | DATE      | Data de nascimento (opcional)    |
+| training_since | DATE      | Início do treinamento (opcional) |
+| is_active      | BOOLEAN   | Status ativo/inativo             |
+| created_at     | TIMESTAMP | Data de criação                  |
+| updated_at     | TIMESTAMP | Data de atualização              |
 
 ## 🔐 Variáveis de Ambiente
 
@@ -176,6 +192,24 @@ DB_NAME=seirin_db
 NODE_ENV=development
 PORT=3000
 RUN_MIGRATIONS=true       # true para rodar migrations no startup
+```
+
+### Exemplo pronto
+
+Você pode começar copiando o modelo:
+
+```bash
+cp .env.example .env
+```
+
+Depois ajuste os valores conforme seu ambiente (Docker vs local).
+
+#### Opção: `DB_LOGGING`
+
+Habilite logs de queries do TypeORM em desenvolvimento:
+
+```env
+DB_LOGGING=true  # útil para debugar consultas SQL
 ```
 
 ## 🚢 Deploy
