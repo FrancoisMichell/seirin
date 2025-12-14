@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
-import { AuthService } from 'src/common/auth/auth.service';
-import { LocalAuthGuard } from 'src/common/auth/guards/local-auth.guard';
+import { AuthService } from 'src/auth/auth.service';
+import { LocalAuthGuard } from 'src/auth/guards/local-auth.guard';
 import { Public } from 'src/common/decorators';
 import { TeachersService } from 'src/teachers/teachers.service';
 
