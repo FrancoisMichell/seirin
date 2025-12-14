@@ -212,7 +212,39 @@ Habilite logs de queries do TypeORM em desenvolvimento:
 DB_LOGGING=true  # útil para debugar consultas SQL
 ```
 
-## 🚢 Deploy
+## � Commits
+
+Este projeto utiliza **Conventional Commits** com validação automática via [Commitlint](https://commitlint.js.org/).
+
+### Formato
+
+```
+type(scope): subject
+```
+
+**Types:**
+
+- `feat` - Nova funcionalidade
+- `fix` - Correção de bug
+- `docs` - Documentação
+- `style` - Formatação de código
+- `refactor` - Refatoração sem mudança de comportamento
+- `perf` - Melhoria de performance
+- `test` - Testes
+- `chore` - Tarefas administrativas
+- `ci` - Alterações em CI/CD
+- `revert` - Reverter commit anterior
+
+**Exemplos:**
+
+```bash
+git commit -m "feat: add student authentication"
+git commit -m "fix(students): resolve pagination bug"
+git commit -m "docs: update README"
+git commit -m "chore: update dependencies"
+```
+
+## �🚢 Deploy
 
 ### Docker Image (GHCR)
 
