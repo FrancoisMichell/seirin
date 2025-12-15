@@ -1,39 +1,43 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
+import { Mocked, TestBed } from '@suites/unit';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let jwtService: JwtService;
+  let jwtService: Mocked<JwtService>;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        {
-          provide: JwtService,
-          useValue: {
-            signAsync: jest.fn().mockResolvedValue('token'),
-          },
-        },
-      ],
-    }).compile();
-
-    service = module.get<AuthService>(AuthService);
-    jwtService = module.get<JwtService>(JwtService);
+  beforeAll(async () => {
+    const { unit, unitRef } = await TestBed.solitary(AuthService).compile();
+    service = unit;
+    jwtService = unitRef.get(JwtService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should return access token on login', async () => {
-    const result = await service.login({ id: 1, registry: 'test' });
-    expect(result.access_token).toBeDefined();
-    expect(jwtService.signAsync).toHaveBeenCalledWith({
-      sub: 1,
-      username: 'test',
+  describe('login', () => {
+    it('should return a JWT token on login', async () => {
+      const mockUser = { id: 1, registry: '123321' };
+      const mockToken = { access_token: 'jwt_token' };
+
+      jwtService.signAsync.mockResolvedValue('jwt_token');
+
+      const result = await service.login(mockUser);
+
+      expect(result).toEqual(mockToken);
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        username: mockUser.registry,
+      });
+    });
+
+    it('should handle jwtService errors gracefully', async () => {
+      const mockUser = { id: 1, registry: '123321' };
+
+      jwtService.signAsync.mockRejectedValue(new Error('JWT Error'));
+
+      await expect(service.login(mockUser)).rejects.toThrow('JWT Error');
     });
   });
 });

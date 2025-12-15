@@ -1,13 +1,9 @@
 import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
-import { Request as ExpressRequest } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { LocalAuthGuard } from 'src/auth/guards/local-auth.guard';
 import { Public } from 'src/common/decorators';
 import { TeachersService } from 'src/teachers/teachers.service';
-
-interface AuthenticatedRequest extends ExpressRequest {
-  user: { id: number; registry: string };
-}
+import { AuthenticatedRequestDto } from './dto/authenticated-request.dto';
 
 @Controller('teacher')
 export class TeachersController {
@@ -19,12 +15,12 @@ export class TeachersController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  login(@Request() req: AuthenticatedRequest) {
+  login(@Request() req: AuthenticatedRequestDto) {
     return this.authService.login(req.user);
   }
 
   @Get('me')
-  getProfile(@Request() req: AuthenticatedRequest) {
+  getProfile(@Request() req: AuthenticatedRequestDto) {
     return this.teacherService.findByRegistry(req.user.registry);
   }
 }
