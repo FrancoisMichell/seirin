@@ -9,6 +9,7 @@ function getServer(app: INestApplication) {
 
 describe('Validation (e2e)', () => {
   let app: INestApplication;
+  let authToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -24,6 +25,13 @@ describe('Validation (e2e)', () => {
       }),
     );
     await app.init();
+
+    const login = await request(getServer(app))
+      .post('/teacher/login')
+      .send({ username: '123321', password: 'teste123' })
+      .expect(201);
+
+    authToken = (login.body as Record<string, unknown>).access_token as string;
   });
 
   afterAll(async () => {
@@ -34,6 +42,7 @@ describe('Validation (e2e)', () => {
     it('should return 400 for empty name', async () => {
       const res = await request(getServer(app))
         .post('/students')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ name: '', belt: 'White' })
         .expect(400);
       const body = res.body as Record<string, unknown>;
@@ -43,6 +52,7 @@ describe('Validation (e2e)', () => {
     it('should return 400 for invalid belt enum', async () => {
       const res = await request(getServer(app))
         .post('/students')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'Purple' })
         .expect(400);
       const body = res.body as Record<string, unknown>;
@@ -52,6 +62,7 @@ describe('Validation (e2e)', () => {
     it('should return 400 for invalid birthday format', async () => {
       const res = await request(getServer(app))
         .post('/students')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'White', birthday: '2000-13-45' })
         .expect(400);
       const body = res.body as Record<string, unknown>;
@@ -61,6 +72,7 @@ describe('Validation (e2e)', () => {
     it('should return 400 for invalid trainingSince format', async () => {
       const res = await request(getServer(app))
         .post('/students')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'White', trainingSince: 'abcd' })
         .expect(400);
       const body = res.body as Record<string, unknown>;
@@ -70,6 +82,7 @@ describe('Validation (e2e)', () => {
     it('should strip unknown fields and forbid non-whitelisted', async () => {
       const res = await request(getServer(app))
         .post('/students')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'White', unknownField: 'x' })
         .expect(400);
       const body = res.body as Record<string, unknown>;
@@ -81,6 +94,7 @@ describe('Validation (e2e)', () => {
     it('should return 404 for non-existing UUID', async () => {
       await request(getServer(app))
         .get('/students/550e8400-e29b-41d4-a716-4466554400ff')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
   });
