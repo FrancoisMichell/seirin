@@ -1,30 +1,20 @@
 import { Injectable } from '@nestjs/common';
-
-export type Teacher = {
-  id: number;
-  registry: string;
-  password: string;
-};
+import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class TeachersService {
-  private readonly teachers: Teacher[] = [
-    {
-      id: 1,
-      registry: '123321',
-      password: 'teste123',
-    },
-  ];
+  constructor(private usersService: UsersService) {}
 
-  findByRegistry(registry: string): Teacher | undefined {
-    return this.teachers.find((teacher) => teacher.registry === registry);
+  findByRegistry(registry: string) {
+    return this.usersService.findByRegistry(registry);
   }
 
-  validateCredentials(
-    username: string,
+  async validateCredentials(
+    registry: string,
     password: string,
-  ): Omit<Teacher, 'password'> | null {
-    const teacher = this.findByRegistry(username);
+  ): Promise<Omit<User, 'password'> | null> {
+    const teacher = await this.findByRegistry(registry);
     if (!teacher || teacher.password !== password) {
       return null;
     }

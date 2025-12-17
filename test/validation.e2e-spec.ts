@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
+import { DataSource } from 'typeorm';
 
 function getServer(app: INestApplication) {
   return app.getHttpServer() as unknown as Parameters<typeof request>[0];
@@ -25,6 +26,19 @@ describe('Validation (e2e)', () => {
       }),
     );
     await app.init();
+
+    // Create test teacher user
+    const dataSource = app.get(DataSource);
+    await dataSource.query(`
+      INSERT INTO users (id, name, registry, password, belt, is_active, created_at, updated_at)
+      VALUES ('11111111-1111-1111-1111-111111111111', 'Test Teacher', '123321', 'teste123', 'Black', true, NOW(), NOW())
+      ON CONFLICT (registry) DO NOTHING
+    `);
+    await dataSource.query(`
+      INSERT INTO user_roles (id, role, "userId")
+      VALUES ('22222222-2222-2222-2222-222222222222', 'teacher', '11111111-1111-1111-1111-111111111111')
+      ON CONFLICT DO NOTHING
+    `);
 
     const login = await request(getServer(app))
       .post('/teacher/login')

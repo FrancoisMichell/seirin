@@ -21,6 +21,6 @@ export class TeachersController {
 
   @Get('me')
   getProfile(@Request() req: AuthenticatedRequestDto) {
-    return this.teacherService.findByRegistry(req.user.registry);
+    return this.teacherService.findByRegistry(req.user.registry!);
   }
 }

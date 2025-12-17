@@ -9,14 +9,17 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     super();
   }
 
-  validate(
+  async validate(
     username: string,
     password: string,
-  ): { id: number; registry: string } {
-    const user = this.teacherService.validateCredentials(username, password);
+  ): Promise<{ id: string; registry: string }> {
+    const user = await this.teacherService.validateCredentials(
+      username,
+      password,
+    );
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return user;
+    return { id: user.id, registry: user.registry! };
   }
 }

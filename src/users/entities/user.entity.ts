@@ -1,25 +1,27 @@
+import { Belt } from 'src/common/enums';
 import {
-  Column,
-  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
-import { Belt } from '../../common/enums';
+import { UserRole } from './user-role.entity';
 
-@Entity()
-export class Student {
+@Entity('users')
+export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   name: string;
 
-  @Column({
-    name: 'is_active',
-    default: true,
-  })
-  isActive: boolean;
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  registry: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  password: string | null;
 
   @Column({
     type: 'enum',
@@ -33,14 +35,20 @@ export class Student {
     type: 'date',
     nullable: true,
   })
-  birthday: Date;
+  birthday: Date | null;
 
   @Column({
     name: 'training_since',
     type: 'date',
     nullable: true,
   })
-  trainingSince: Date;
+  trainingSince: Date | null;
+
+  @Column({
+    name: 'is_active',
+    default: true,
+  })
+  isActive: boolean;
 
   @CreateDateColumn({
     name: 'created_at',
@@ -51,4 +59,7 @@ export class Student {
     name: 'updated_at',
   })
   updatedAt: Date;
+
+  @OneToMany(() => UserRole, (role) => role.user, { cascade: true })
+  roles: UserRole[];
 }

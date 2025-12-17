@@ -1,40 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Student } from './entities/student.entity';
-import { Repository } from 'typeorm';
+import { UsersService } from 'src/users/users.service';
+import { UserRoleType } from 'src/common/enums';
 
 @Injectable()
 export class StudentsService {
-  constructor(
-    @InjectRepository(Student)
-    private studentsRepository: Repository<Student>,
-  ) {}
+  constructor(private usersService: UsersService) {}
 
-  async create(createStudentDto: CreateStudentDto): Promise<Student> {
-    const newStudent = this.studentsRepository.create(createStudentDto);
-    const result = await this.studentsRepository.insert(newStudent);
-    return this.findOne(result.identifiers[0].id as string);
+  async create(createStudentDto: CreateStudentDto) {
+    return this.usersService.create(createStudentDto, [UserRoleType.STUDENT]);
   }
 
   async findAll() {
-    return await this.studentsRepository.find();
+    return await this.usersService.findByRole(UserRoleType.STUDENT);
   }
 
-  async findOne(id: string): Promise<Student> {
-    const student = await this.studentsRepository.findOneBy({ id });
+  async findOne(id: string) {
+    const student = await this.usersService.findById(id);
     if (!student) throw new NotFoundException('Student not found');
+
     return student;
   }
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {
-    const updatedStudent = await this.studentsRepository.update(
-      id,
-      updateStudentDto,
-    );
-    if (!updatedStudent.affected)
-      throw new NotFoundException('Student not found');
-    return this.findOne(id);
+    return this.usersService.update(id, updateStudentDto);
   }
 }
