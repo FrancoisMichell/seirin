@@ -9,7 +9,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Student } from './entities/student.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @ApiTags('students')
 @Controller('students')
@@ -30,7 +30,7 @@ export class StudentsController {
   @ApiResponse({
     status: 200,
     description: 'List of all students',
-    type: [Student],
+    type: [User],
   })
   findAll() {
     return this.studentsService.findAll();
@@ -43,7 +43,7 @@ export class StudentsController {
     description: 'Student UUID',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @ApiResponse({ status: 200, description: 'Student found', type: Student })
+  @ApiResponse({ status: 200, description: 'Student found', type: User })
   @ApiResponse({ status: 404, description: 'Student not found' })
   findOne(@Param('id') id: string) {
     return this.studentsService.findOne(id);
@@ -56,7 +56,7 @@ export class StudentsController {
   @ApiResponse({
     status: 200,
     description: 'Student updated successfully',
-    type: Student,
+    type: User,
   })
   @ApiResponse({ status: 404, description: 'Student not found' })
   update(@Param('id') id: string, @Body() updateStudentDto: UpdateStudentDto) {

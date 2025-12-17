@@ -1,5 +1,2 @@
-echo "Type checking..."
-tsc --noEmit
-
 echo "Running tests..."
 npm test

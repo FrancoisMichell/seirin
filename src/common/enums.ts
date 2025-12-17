@@ -7,3 +7,8 @@ export enum Belt {
   Brown = 'Brown',
   Black = 'Black',
 }
+
+export enum UserRoleType {
+  STUDENT = 'student',
+  TEACHER = 'teacher',
+}

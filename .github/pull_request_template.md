@@ -4,13 +4,13 @@
 
 ## 🎯 Tipo de Mudança
 
-- [ ] ✨ Nova feature
-- [ ] 🐛 Bug fix
-- [ ] 📚 Documentação
-- [ ] 🎨 Refatoração
-- [ ] ⚡ Performance
-- [ ] 🔒 Segurança
-- [ ] ♻️ Chore/Dependencies
+- [] ✨ Nova feature
+- [] 🐛 Bug fix
+- [] 📚 Documentação
+- [] 🎨 Refatoração
+- [] ⚡ Performance
+- [] 🔒 Segurança
+- [] ♻️ Chore/Dependencies
 
 ## 🔗 Issues Relacionadas
 
@@ -22,33 +22,33 @@ Closes #
 
 ### Code Quality
 
-- [ ] Código segue o padrão do projeto
-- [ ] Commits seguem [Conventional Commits](../README.md#conventional-commits)
-- [ ] Sem console.log ou código de debug
-- [ ] Sem `any` types desnecessários
+- [] Código segue o padrão do projeto
+- [] Commits seguem [Conventional Commits](../README.md#conventional-commits)
+- [] Sem console.log ou código de debug
+- [] Sem `any` types desnecessários
 
 ### Tests
 
-- [ ] Testes unitários adicionados/atualizados
-- [ ] Testes passam localmente (`npm test`)
-- [ ] Cobertura de testes mantida (>80%)
+- [] Testes unitários adicionados/atualizados
+- [] Testes passam localmente (`npm test`)
+- [] Cobertura de testes mantida (>80%)
 
 ### Documentation
 
-- [ ] README atualizado (se necessário)
-- [ ] Comentários em código complexo
-- [ ] Tipos/Interfaces bem documentadas
+- [] README atualizado (se necessário)
+- [] Comentários em código complexo
+- [] Tipos/Interfaces bem documentadas
 
 ### Performance
 
-- [ ] Sem regressões de performance
-- [ ] Queries otimizadas (se aplicável)
+- [] Sem regressões de performance
+- [] Queries otimizadas (se aplicável)
 
 ### Security
 
-- [ ] Sem credenciais expostas
-- [ ] Sem vulnerabilidades (npm audit clean)
-- [ ] Validações/Autenticação verificadas
+- [] Sem credenciais expostas
+- [] Sem vulnerabilidades (npm audit clean)
+- [] Validações/Autenticação verificadas
 
 ## 🔍 Screenshots / Logs
 

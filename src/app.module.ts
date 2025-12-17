@@ -7,6 +7,7 @@ import { datasourceOptions } from '../db/datasource';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
 import { TeachersModule } from './teachers/teachers.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TeachersModule } from './teachers/teachers.module';
     StudentsModule,
     AuthModule,
     TeachersModule,
+    UsersModule,
   ],
   controllers: [HealthController],
   providers: [],

@@ -1,6 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { Mocked, TestBed } from '@suites/unit';
+import { User } from 'src/users/entities/user.entity';
+import { UserRoleType } from 'src/common/enums';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -18,7 +20,11 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return a JWT token on login', async () => {
-      const mockUser = { id: 1, registry: '123321' };
+      const mockUser = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        registry: '123321',
+        roles: [{ role: UserRoleType.TEACHER }],
+      } as User;
       const mockToken = { access_token: 'jwt_token' };
 
       jwtService.signAsync.mockResolvedValue('jwt_token');
@@ -29,15 +35,45 @@ describe('AuthService', () => {
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: mockUser.id,
         username: mockUser.registry,
+        roles: [mockUser.roles[0].role],
+      });
+    });
+
+    it('should return a JWT token on login with multiple roles', async () => {
+      const mockUser = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        registry: '123321',
+        roles: [{ role: UserRoleType.TEACHER }, { role: UserRoleType.STUDENT }],
+      } as User;
+      const mockToken = { access_token: 'jwt_token' };
+
+      jwtService.signAsync.mockResolvedValue('jwt_token');
+
+      const result = await service.login(mockUser);
+
+      expect(result).toEqual(mockToken);
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        username: mockUser.registry,
+        roles: [mockUser.roles[0].role, mockUser.roles[1].role],
       });
     });
 
     it('should handle jwtService errors gracefully', async () => {
-      const mockUser = { id: 1, registry: '123321' };
+      const mockUser = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        registry: '123321',
+        roles: [{ role: UserRoleType.TEACHER }],
+      } as User;
 
       jwtService.signAsync.mockRejectedValue(new Error('JWT Error'));
 
       await expect(service.login(mockUser)).rejects.toThrow('JWT Error');
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        username: mockUser.registry,
+        roles: [mockUser.roles[0].role],
+      });
     });
   });
 });
