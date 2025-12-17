@@ -7,6 +7,8 @@ import { Mocked } from '@suites/doubles.jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository, SelectQueryBuilder } from 'typeorm';
+import { PasswordUtil } from '../common/utils/password.util';
+import { ConfigService } from '@nestjs/config';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -14,6 +16,16 @@ describe('UsersService', () => {
   let userRolesRepository: Mocked<Repository<UserRole>>;
 
   beforeAll(async () => {
+    // Initialize PasswordUtil with a mock ConfigService
+    const mockConfigService = {
+      get: jest.fn((key: string) => {
+        if (key === 'security.bcryptSaltRounds') return 10;
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+
+    PasswordUtil.setConfigService(mockConfigService);
+
     const { unit, unitRef } = await TestBed.solitary(UsersService).compile();
     service = unit;
     usersRepository = unitRef.get(getRepositoryToken(User) as never);
@@ -36,7 +48,11 @@ describe('UsersService', () => {
 
       const createdUser = {
         id: '123',
-        ...userData,
+        name: userData.name,
+        registry: userData.registry,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        password: expect.any(String), // Password will be hashed
+        belt: userData.belt,
       } as User;
 
       const userRole = {
@@ -70,7 +86,12 @@ describe('UsersService', () => {
       expect(result?.name).toBe('John Doe');
       expect(result?.roles).toHaveLength(1);
       expect(result?.roles[0].role).toBe(UserRoleType.STUDENT);
-      expect(usersRepository.create).toHaveBeenCalledWith(userData);
+
+      // Verify password was hashed (should not be plain text)
+      const createCall = usersRepository.create.mock.calls[0][0];
+      expect(createCall.password).not.toBe('password123');
+      expect(createCall.password).toBeDefined();
+
       expect(usersRepository.insert).toHaveBeenCalled();
       expect(userRolesRepository.insert).toHaveBeenCalled();
     });

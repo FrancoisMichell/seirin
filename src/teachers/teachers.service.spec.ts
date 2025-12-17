@@ -3,12 +3,22 @@ import { TeachersService } from './teachers.service';
 import { UsersService } from 'src/users/users.service';
 import { Mocked } from '@suites/doubles.jest';
 import { User } from 'src/users/entities/user.entity';
+import { PasswordUtil } from 'src/common/utils/password.util';
+import { ConfigService } from '@nestjs/config';
 
 describe('TeacherService', () => {
   let service: TeachersService;
   let usersService: Mocked<UsersService>;
 
   beforeAll(async () => {
+    const mockConfigService = {
+      get: jest.fn((key: string) => {
+        if (key === 'security.bcryptSaltRounds') {
+          return 10;
+        }
+      }),
+    } as unknown as ConfigService;
+    PasswordUtil.setConfigService(mockConfigService);
     const { unit, unitRef } = await TestBed.solitary(TeachersService).compile();
     service = unit;
     usersService = unitRef.get(UsersService);
@@ -44,7 +54,7 @@ describe('TeacherService', () => {
       const mockedTeacher = {
         id: '1',
         registry: '123321',
-        password: 'teste123',
+        password: await PasswordUtil.hashPassword('teste123'),
       } as User;
       usersService.findByRegistry.mockResolvedValue(mockedTeacher);
       const result = await service.validateCredentials('123321', 'teste123');

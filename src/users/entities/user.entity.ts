@@ -8,6 +8,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { UserRole } from './user-role.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class User {
@@ -20,6 +21,7 @@ export class User {
   @Column({ type: 'varchar', unique: true, nullable: true })
   registry: string | null;
 
+  @Exclude()
   @Column({ type: 'varchar', nullable: true })
   password: string | null;
 

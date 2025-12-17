@@ -19,6 +19,8 @@ export const envValidationSchema = Joi.object({
   LOG_LEVEL: Joi.string()
     .valid('error', 'warn', 'info', 'debug', 'verbose')
     .default('info'),
+  BCRYPT_SALT_ROUNDS: Joi.number().default(10),
+  JWT_SECRET: Joi.string().required(),
 });
 
 // Application configuration factory
@@ -36,6 +38,10 @@ export default () => ({
     port: Number(process.env.PORT ?? 3000),
     runMigrations:
       (process.env.RUN_MIGRATIONS ?? 'true').toLowerCase() === 'true',
+  },
+  security: {
+    bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10),
+    jwtSecret: process.env.JWT_SECRET,
   },
   features: {
     swaggerEnabled:

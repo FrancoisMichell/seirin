@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserRoleType } from 'src/common/enums';
+import { PasswordUtil } from 'src/common/utils/password.util';
 
 @Injectable()
 export class UsersService {
@@ -20,6 +21,9 @@ export class UsersService {
   ): Promise<User | null> {
     //TODO: Validar se fazendo com user.roles = [lista de roles] funciona. Dessa forma usaria o insert apenas 1x ao invés de 2
 
+    if (userData.password) {
+      userData.password = await PasswordUtil.hashPassword(userData.password);
+    }
     const user = this.usersRepository.create(userData);
     const newUser = await this.usersRepository.insert(user);
 

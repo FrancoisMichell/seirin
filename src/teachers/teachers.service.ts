@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PasswordUtil } from 'src/common/utils/password.util';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
@@ -13,13 +14,20 @@ export class TeachersService {
   async validateCredentials(
     registry: string,
     password: string,
-  ): Promise<Omit<User, 'password'> | null> {
+  ): Promise<User | null> {
     const teacher = await this.findByRegistry(registry);
-    if (!teacher || teacher.password !== password) {
+    if (!teacher || !teacher.password) {
       return null;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...result } = teacher;
-    return result;
+
+    const isPasswordValid = await PasswordUtil.compare(
+      password,
+      teacher.password,
+    );
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return teacher;
   }
 }
