@@ -16,8 +16,8 @@ describe('UsersService', () => {
   beforeAll(async () => {
     const { unit, unitRef } = await TestBed.solitary(UsersService).compile();
     service = unit;
-    usersRepository = unitRef.get(getRepositoryToken(User));
-    userRolesRepository = unitRef.get(getRepositoryToken(UserRole));
+    usersRepository = unitRef.get(getRepositoryToken(User) as never);
+    userRolesRepository = unitRef.get(getRepositoryToken(UserRole) as never);
   });
 
   it('should be defined', () => {
@@ -297,8 +297,14 @@ describe('UsersService', () => {
       const updatedUser = {
         id: userId,
         name: 'Updated Name',
+        password: null,
         belt: Belt.Blue,
         registry: '987654',
+        birthday: null,
+        trainingSince: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         roles: [],
       } as User;
 
