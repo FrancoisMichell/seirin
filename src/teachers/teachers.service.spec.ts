@@ -51,15 +51,20 @@ describe('TeacherService', () => {
 
   describe('validateCredentials', () => {
     it('should return teacher data without password for valid credentials', async () => {
+      const hashedPassword = await PasswordUtil.hashPassword('teste123');
       const mockedTeacher = {
         id: '1',
         registry: '123321',
-        password: await PasswordUtil.hashPassword('teste123'),
+        password: hashedPassword,
       } as User;
       usersService.findByRegistry.mockResolvedValue(mockedTeacher);
       const result = await service.validateCredentials('123321', 'teste123');
       expect(result).toBeDefined();
-      expect(result).toEqual({ id: '1', registry: '123321' });
+      expect(result).toEqual({
+        id: '1',
+        registry: '123321',
+        password: hashedPassword,
+      });
     });
 
     it('should return null for invalid registry', async () => {
