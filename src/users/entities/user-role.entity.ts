@@ -6,7 +6,7 @@ import {
   Unique,
 } from 'typeorm';
 import { User } from './user.entity';
-import { UserRoleType } from 'src/common/enums';
+import { UserRoleType } from '../../common/enums';
 
 @Entity('user_roles')
 @Unique(['user', 'role'])

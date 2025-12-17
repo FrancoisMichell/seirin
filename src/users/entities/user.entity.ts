@@ -1,4 +1,4 @@
-import { Belt } from 'src/common/enums';
+import { Belt } from '../../common/enums';
 import {
   Entity,
   PrimaryGeneratedColumn,
