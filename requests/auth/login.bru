@@ -20,7 +20,7 @@ body:json {
 script:post-response {
   const responseData = res.getBody()
   
-  const token = responseData.access_token
+  const token = responseData.token
   
   bru.setEnvVar("SeirinAuthToken", token)
 }

@@ -25,7 +25,7 @@ describe('AuthService', () => {
         registry: '123321',
         roles: [{ role: UserRoleType.TEACHER }],
       } as User;
-      const mockToken = { access_token: 'jwt_token' };
+      const mockToken = { token: 'jwt_token', user: mockUser };
 
       jwtService.signAsync.mockResolvedValue('jwt_token');
 
@@ -45,7 +45,7 @@ describe('AuthService', () => {
         registry: '123321',
         roles: [{ role: UserRoleType.TEACHER }, { role: UserRoleType.STUDENT }],
       } as User;
-      const mockToken = { access_token: 'jwt_token' };
+      const mockToken = { token: 'jwt_token', user: mockUser };
 
       jwtService.signAsync.mockResolvedValue('jwt_token');
 

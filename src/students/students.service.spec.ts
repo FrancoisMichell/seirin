@@ -40,9 +40,10 @@ describe('StudentsService', () => {
       expect(result).toEqual(userMock);
     });
 
-    it('should create and return a new student with birthday and trainingSince fields', async () => {
+    it('should create and return a new student with all possible fields', async () => {
       const createStudentDto = {
         name: 'Jane Doe',
+        registry: '2021002',
         belt: Belt.Blue,
         birthday: new Date('2000-01-01'),
         trainingSince: new Date('2020-01-01'),
