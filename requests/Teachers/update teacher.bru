@@ -1,30 +1,37 @@
 meta {
-  name: find all
+  name: update teacher
   type: http
-  seq: 3
+  seq: 4
 }
 
-get {
-  url: {{host}}/students
-  body: none
+patch {
+  url: {{host}}/teachers/{{teacherId}}
+  body: json
   auth: inherit
 }
 
-params:query {
-  ~page: 1
-  ~limit: 10
+body:json {
+  {
+    "name": "John Doe Sensei Updated",
+    "email": "john.updated@example.com"
+  }
 }
 
 docs {
-  Get all students with pagination.
+  Update a teacher's information.
   
-  Optional query parameters:
-  - page: page number (default: 1)
-  - limit: items per page (default: 10)
+  URL parameter:
+  - id: teacher UUID (use {{teacherId}} variable)
+  
+  Optional fields:
+  - username: new username
+  - name: new name
+  - email: new email
+  - password: new password
   
   Expected response:
   - status: 200 OK
-  - body: [{ "id": "uuid", "name": "...", ... }, ...]
+  - body: { "id": "uuid", "username": "...", "name": "...", "email": "..." }
 }
 
 script:post-response {
@@ -58,9 +65,10 @@ tests {
     expect(res.getStatus()).to.equal(200);
   });
   
-  test("should return array of students", function() {
+  test("should return updated teacher data", function() {
     const data = res.getBody();
-    expect(Array.isArray(data)).to.be.true;
+    expect(data).to.have.property("id");
+    expect(data).to.not.have.property("password");
   });
 }
 

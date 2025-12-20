@@ -1,11 +1,11 @@
 meta {
-  name: find all
+  name: find all teachers
   type: http
-  seq: 3
+  seq: 2
 }
 
 get {
-  url: {{host}}/students
+  url: {{host}}/teachers
   body: none
   auth: inherit
 }
@@ -16,7 +16,7 @@ params:query {
 }
 
 docs {
-  Get all students with pagination.
+  Get all teachers with pagination.
   
   Optional query parameters:
   - page: page number (default: 1)
@@ -24,7 +24,25 @@ docs {
   
   Expected response:
   - status: 200 OK
-  - body: [{ "id": "uuid", "name": "...", ... }, ...]
+  - body: [{ "id": "uuid", "username": "...", "name": "...", "email": "..." }, ...]
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return array of teachers", function() {
+    const data = res.getBody();
+    expect(Array.isArray(data)).to.be.true;
+  });
+  
+  test("teachers should not have password field", function() {
+    const data = res.getBody();
+    if (data.length > 0) {
+      expect(data[0]).to.not.have.property("password");
+    }
+  });
 }
 
 script:post-response {
@@ -51,17 +69,6 @@ script:post-response {
       await bru.sendRequest();
     }
   }
-}
-
-tests {
-  test("should return 200 OK", function() {
-    expect(res.getStatus()).to.equal(200);
-  });
-  
-  test("should return array of students", function() {
-    const data = res.getBody();
-    expect(Array.isArray(data)).to.be.true;
-  });
 }
 
 settings {

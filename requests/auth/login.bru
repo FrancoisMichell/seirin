@@ -5,24 +5,59 @@ meta {
 }
 
 post {
-  url: http://localhost:3000/teacher/login
+  url: {{host}}/teacher/login
   body: json
-  auth: inherit
+  auth: none
 }
 
 body:json {
   {
-    "username": "01nan2032",
-    "password": "password123"
+    "username": "{{loginUsername}}",
+    "password": "{{loginPassword}}"
   }
 }
 
+docs {
+  Authenticate as a teacher and get access token.
+  
+  Required fields:
+  - username: teacher's username
+  - password: teacher's password
+  
+  Expected response:
+  - status: 200 OK
+  - body: { "token": "jwt-token", "user": {...} }
+  
+  Note: Token is automatically saved to SeirinAuthToken variable
+}
+
 script:post-response {
-  const responseData = res.getBody()
+  if (res.getStatus() === 200) {
+    const responseData = res.getBody();
+    const token = responseData.token;
+    
+    bru.setEnvVar("SeirinAuthToken", token);
+    console.log("✓ Logged in successfully. Token saved.");
+  } else {
+    console.log("✗ Login failed:", res.getBody().message);
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
   
-  const token = responseData.token
+  test("should return token", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("token");
+    expect(data.token).to.be.a("string");
+  });
   
-  bru.setEnvVar("SeirinAuthToken", token)
+  test("should return user data", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("user");
+  });
 }
 
 settings {

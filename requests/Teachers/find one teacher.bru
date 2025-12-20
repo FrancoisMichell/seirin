@@ -1,30 +1,26 @@
 meta {
-  name: find all
+  name: find one teacher
   type: http
   seq: 3
 }
 
 get {
-  url: {{host}}/students
+  url: {{host}}/teachers/{{teacherId}}
   body: none
   auth: inherit
 }
 
-params:query {
-  ~page: 1
-  ~limit: 10
-}
-
 docs {
-  Get all students with pagination.
+  Get a specific teacher by ID.
   
-  Optional query parameters:
-  - page: page number (default: 1)
-  - limit: items per page (default: 10)
+  URL parameter:
+  - id: teacher UUID (use {{teacherId}} variable)
   
   Expected response:
   - status: 200 OK
-  - body: [{ "id": "uuid", "name": "...", ... }, ...]
+  - body: { "id": "uuid", "username": "...", "name": "...", "email": "..." }
+  
+  Note: Make sure to set teacherId variable or replace with actual ID
 }
 
 script:post-response {
@@ -58,9 +54,11 @@ tests {
     expect(res.getStatus()).to.equal(200);
   });
   
-  test("should return array of students", function() {
+  test("should return teacher data", function() {
     const data = res.getBody();
-    expect(Array.isArray(data)).to.be.true;
+    expect(data).to.have.property("id");
+    expect(data).to.have.property("username");
+    expect(data).to.not.have.property("password");
   });
 }
 
