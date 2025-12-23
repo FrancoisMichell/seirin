@@ -327,6 +327,8 @@ describe('UsersService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         roles: [],
+        classes: [],
+        enrolledClasses: [],
       } as User;
 
       usersRepository.update.mockResolvedValue({

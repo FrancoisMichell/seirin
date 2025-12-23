@@ -6,9 +6,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToMany,
 } from 'typeorm';
 import { UserRole } from './user-role.entity';
 import { Exclude } from 'class-transformer';
+import { Class } from 'src/classes/entities/class.entity';
 
 @Entity('users')
 export class User {
@@ -64,4 +66,10 @@ export class User {
 
   @OneToMany(() => UserRole, (role) => role.user, { cascade: true })
   roles: UserRole[];
+
+  @OneToMany(() => Class, (classEntity) => classEntity.teacher)
+  classes: Class[];
+
+  @ManyToMany(() => Class, (classEntity) => classEntity.enrolledStudents)
+  enrolledClasses: Class[];
 }

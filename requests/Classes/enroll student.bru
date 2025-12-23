@@ -1,0 +1,79 @@
+meta {
+  name: enroll student
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{host}}/classes/{{classId}}/enroll/{{studentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+vars:pre-request {
+  studentId: 8502dde3-535e-4978-89b0-d491e6ac16f8
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 201) {
+    console.log("✓ Student enrolled successfully");
+  }
+}
+
+tests {
+  test("should return 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("should return class with enrolled students", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("enrolledStudents");
+    expect(data.enrolledStudents).to.be.an("array");
+  });
+}
+
+docs {
+  Enroll a student in a class.
+  
+  Path parameters:
+  - classId: UUID of the class
+  - studentId: UUID of the student
+  
+  Validations:
+  - Class must be active
+  - User must have STUDENT role
+  - Student must be active
+  - Student cannot be already enrolled
+  
+  Expected response:
+  - status: 201 Created
+  - body: { "id": "uuid", "enrolledStudents": [...] }
+}

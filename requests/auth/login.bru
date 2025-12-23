@@ -17,27 +17,15 @@ body:json {
   }
 }
 
-docs {
-  Authenticate as a teacher and get access token.
-  
-  Required fields:
-  - username: teacher's username
-  - password: teacher's password
-  
-  Expected response:
-  - status: 200 OK
-  - body: { "token": "jwt-token", "user": {...} }
-  
-  Note: Token is automatically saved to SeirinAuthToken variable
-}
-
 script:post-response {
   if (res.getStatus() === 200) {
     const responseData = res.getBody();
     const token = responseData.token;
+    const teacherId = responseData.user.id;
     
     bru.setEnvVar("SeirinAuthToken", token);
-    console.log("✓ Logged in successfully. Token saved.");
+    bru.setEnvVar("teacherId", teacherId);
+    console.log("✓ Logged in successfully. Token and teacherId saved.");
   } else {
     console.log("✗ Login failed:", res.getBody().message);
   }
@@ -63,4 +51,18 @@ tests {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+docs {
+  Authenticate as a teacher and get access token.
+  
+  Required fields:
+  - username: teacher's username
+  - password: teacher's password
+  
+  Expected response:
+  - status: 200 OK
+  - body: { "token": "jwt-token", "user": {...} }
+  
+  Note: Token is automatically saved to SeirinAuthToken variable
 }
