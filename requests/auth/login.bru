@@ -17,20 +17,6 @@ body:json {
   }
 }
 
-docs {
-  Authenticate as a teacher and get access token.
-  
-  Required fields:
-  - username: teacher's username
-  - password: teacher's password
-  
-  Expected response:
-  - status: 200 OK
-  - body: { "token": "jwt-token", "user": {...} }
-  
-  Note: Token is automatically saved to SeirinAuthToken variable
-}
-
 script:post-response {
   if (res.getStatus() === 200) {
     const responseData = res.getBody();
