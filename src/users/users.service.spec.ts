@@ -307,6 +307,126 @@ describe('UsersService', () => {
     });
   });
 
+  describe('getTeacher', () => {
+    it('should return a teacher user when valid teacherId is provided', async () => {
+      const mockTeacher = {
+        id: 'teacher-123',
+        name: 'Mr. Smith',
+        roles: [{ role: UserRoleType.TEACHER }],
+        isActive: true,
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockTeacher);
+
+      const result = await service.getTeacher('teacher-123');
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe('teacher-123');
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'teacher-123' },
+        relations: ['roles'],
+      });
+    });
+
+    it('should throw NotFoundException when teacher does not exist', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getTeacher('non-existent-id')).rejects.toThrow(
+        'Teacher not found',
+      );
+    });
+
+    it('should throw BadRequestException when user is not a teacher', async () => {
+      const mockUser = {
+        id: 'user-123',
+        name: 'John Doe',
+        roles: [{ role: UserRoleType.STUDENT }],
+        isActive: true,
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockUser);
+
+      await expect(service.getTeacher('user-123')).rejects.toThrow(
+        'User is not a teacher',
+      );
+    });
+
+    it('should throw BadRequestException when teacher is not active', async () => {
+      const mockTeacher = {
+        id: 'teacher-456',
+        name: 'Ms. Jane',
+        roles: [{ role: UserRoleType.TEACHER }],
+        isActive: false,
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockTeacher);
+
+      await expect(service.getTeacher('teacher-456')).rejects.toThrow(
+        'Teacher is not active',
+      );
+    });
+  });
+
+  describe('getStudent', () => {
+    it('should return a student user when valid studentId is provided', async () => {
+      const mockStudent = {
+        id: 'student-123',
+        name: 'Mr. Smith',
+        roles: [{ role: UserRoleType.STUDENT }],
+        isActive: true,
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockStudent);
+
+      const result = await service.getStudent('student-123');
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe('student-123');
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'student-123' },
+        relations: ['roles'],
+      });
+    });
+
+    it('should throw NotFoundException when student does not exist', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getStudent('non-existent-id')).rejects.toThrow(
+        'Student not found',
+      );
+    });
+
+    it('should throw BadRequestException when user is not a student', async () => {
+      const mockUser = {
+        id: 'user-123',
+        name: 'John Doe',
+        roles: [{ role: UserRoleType.TEACHER }],
+        isActive: true,
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockUser);
+
+      await expect(service.getStudent('user-123')).rejects.toThrow(
+        'User is not a student',
+      );
+    });
+
+    it('should throw BadRequestException when student is not active', async () => {
+      const mockStudent = {
+        id: 'student-456',
+        name: 'Ms. Jane',
+        roles: [{ role: UserRoleType.STUDENT }],
+        isActive: false,
+      } as User;
+
+      usersRepository.findOne.mockResolvedValue(mockStudent);
+
+      await expect(service.getStudent('student-456')).rejects.toThrow(
+        'Student is not active',
+      );
+    });
+  });
+
   describe('update', () => {
     it('should update a user and return updated data', async () => {
       const userId = '123';
@@ -329,6 +449,7 @@ describe('UsersService', () => {
         roles: [],
         classes: [],
         enrolledClasses: [],
+        sessions: [],
       } as User;
 
       usersRepository.update.mockResolvedValue({

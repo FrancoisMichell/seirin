@@ -10,6 +10,7 @@ import { TeachersModule } from './teachers/teachers.module';
 import { UsersModule } from './users/users.module';
 import { PasswordUtil } from './common/utils/password.util';
 import { ClassesModule } from './classes/classes.module';
+import { ClassSessionsModule } from './class-sessions/class-sessions.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ClassesModule } from './classes/classes.module';
     TeachersModule,
     UsersModule,
     ClassesModule,
+    ClassSessionsModule,
   ],
   controllers: [HealthController],
   providers: [],

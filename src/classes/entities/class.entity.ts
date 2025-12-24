@@ -1,3 +1,4 @@
+import { ClassSession } from 'src/class-sessions/entities/class-session.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -6,6 +7,7 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -52,4 +54,7 @@ export class Class {
     },
   })
   enrolledStudents: User[];
+
+  @OneToMany(() => ClassSession, (session) => session.class)
+  sessions: ClassSession[];
 }

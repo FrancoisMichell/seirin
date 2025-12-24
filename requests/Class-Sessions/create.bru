@@ -1,0 +1,85 @@
+meta {
+  name: create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/class-sessions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+body:json {
+  {
+    "classId": "{{classId}}",
+    "date": "2025-12-30",
+    "actualStartTime": "18:00",
+    "notes": "Introdução ao Jiu-Jitsu"
+  }
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 201) {
+    const sessionData = res.getBody();
+    console.log(`✓ Class session created for ${sessionData.date}`);
+    bru.setVar("sessionId", sessionData.id);
+  }
+}
+
+tests {
+  test("should return 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("should return session with class", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("id");
+    expect(data).to.have.property("class");
+    expect(data).to.have.property("date");
+  });
+}
+
+docs {
+  Create a new class session.
+  
+  Required fields:
+  - classId: UUID of the class
+  - date: session date (YYYY-MM-DD)
+  - actualStartTime: start time in HH:MM format
+  
+  Optional fields:
+  - notes: session notes
+  
+  Expected response:
+  - status: 201 Created
+  - body: { "id": "uuid", "class": {...}, "date": "...", ... }
+}

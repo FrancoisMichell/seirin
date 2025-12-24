@@ -1,15 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { UsersService } from 'src/users/users.service';
 import { Repository } from 'typeorm';
 import { Class } from './entities/class.entity';
-import { UserRoleType } from 'src/common/enums';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EntityUtil } from 'src/common/utils/entity.util';
 
 @Injectable()
 export class ClassesService {
@@ -20,17 +16,9 @@ export class ClassesService {
   ) {}
 
   async create(createClassDto: CreateClassDto) {
-    const teacher = await this.usersService.findById(createClassDto.teacherId);
-    if (!teacher) {
-      throw new NotFoundException('Teacher not found');
-    }
-
-    const isTeacher = teacher.roles.some(
-      (role) => role.role === UserRoleType.TEACHER,
+    const teacher = await this.usersService.getTeacher(
+      createClassDto.teacherId,
     );
-    if (!isTeacher) {
-      throw new BadRequestException('User is not a teacher');
-    }
 
     const newClass = this.classRepository.create({
       ...createClassDto,
@@ -80,75 +68,38 @@ export class ClassesService {
     const classEntity = await this.findOne(id);
 
     if (updateClassDto.teacherId) {
-      const teacher = await this.usersService.findById(
+      const teacher = await this.usersService.getTeacher(
         updateClassDto.teacherId,
       );
-      if (!teacher) {
-        throw new NotFoundException('Teacher not found');
-      }
-      const isTeacher = teacher.roles.some(
-        (role) => role.role === UserRoleType.TEACHER,
-      );
-      if (!isTeacher) {
-        throw new BadRequestException('User is not a teacher');
-      }
-
       classEntity.teacher = teacher;
     }
 
-    if (updateClassDto.name) classEntity.name = updateClassDto.name;
-    if (updateClassDto.days) classEntity.days = updateClassDto.days;
-    if (updateClassDto.startTime)
-      classEntity.startTime = updateClassDto.startTime;
-    if (updateClassDto.durationMinutes)
-      classEntity.durationMinutes = updateClassDto.durationMinutes;
+    EntityUtil.updateFields(classEntity, updateClassDto, ['teacherId']);
 
     return this.classRepository.save(classEntity);
   }
 
   async activate(id: string) {
     const classEntity = await this.findOne(id);
-
-    classEntity.isActive = true;
-    return this.classRepository.save(classEntity);
+    return EntityUtil.toggleActive(classEntity, this.classRepository, true);
   }
 
   async deactivate(id: string) {
     const classEntity = await this.findOne(id);
-    classEntity.isActive = false;
-    return this.classRepository.save(classEntity);
+    return EntityUtil.toggleActive(classEntity, this.classRepository, false);
   }
 
   async enrollStudent(classId: string, studentId: string) {
     const classEntity = await this.findOne(classId);
-    if (!classEntity.isActive) {
-      throw new BadRequestException('Cannot enroll in an inactive class');
-    }
+    EntityUtil.ensureActive(classEntity, 'Cannot enroll in an inactive class');
 
-    const student = await this.usersService.findById(studentId);
-    if (!student) {
-      throw new NotFoundException('Student not found');
-    }
+    const student = await this.usersService.getStudent(studentId);
 
-    const isStudent = student.roles.some(
-      (role) => role.role === UserRoleType.STUDENT,
+    EntityUtil.ensureNotInArray(
+      classEntity.enrolledStudents,
+      student.id,
+      'Student is already enrolled in this class',
     );
-    if (!isStudent) {
-      throw new BadRequestException('User is not a student');
-    }
-
-    if (!student.isActive) {
-      throw new BadRequestException('Cannot enroll an inactive student');
-    }
-
-    const alreadyEnrolled = classEntity.enrolledStudents.some(
-      (s) => s.id === student.id,
-    );
-    if (alreadyEnrolled) {
-      throw new BadRequestException(
-        'Student is already enrolled in this class',
-      );
-    }
 
     classEntity.enrolledStudents.push(student);
     return this.classRepository.save(classEntity);
@@ -157,15 +108,12 @@ export class ClassesService {
   async unenrollStudent(classId: string, studentId: string) {
     const classEntity = await this.findOne(classId);
 
-    const studentIndex = classEntity.enrolledStudents.findIndex(
-      (s) => s.id === studentId,
+    EntityUtil.removeFromArray(
+      classEntity.enrolledStudents,
+      studentId,
+      'Student is not enrolled in this class',
     );
 
-    if (studentIndex === -1) {
-      throw new NotFoundException('Student is not enrolled in this class');
-    }
-
-    classEntity.enrolledStudents.splice(studentIndex, 1);
     return this.classRepository.save(classEntity);
   }
 }

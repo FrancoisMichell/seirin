@@ -36,11 +36,12 @@ describe('ClassesService', () => {
     isActive: true,
     teacher: mockTeacher,
     enrolledStudents: [],
+    sessions: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const { unit, unitRef } = await TestBed.solitary(ClassesService).compile();
     service = unit;
     classesRepository = unitRef.get(getRepositoryToken(Class) as never);
@@ -61,42 +62,19 @@ describe('ClassesService', () => {
     };
 
     it('should create a new class', async () => {
-      usersService.findById.mockResolvedValue(mockTeacher);
+      usersService.getTeacher.mockResolvedValue(mockTeacher);
       classesRepository.create.mockReturnValue(mockClass);
       classesRepository.save.mockResolvedValue(mockClass);
 
       const result = await service.create(createClassDto);
 
       expect(result).toEqual(mockClass);
-      expect(usersService.findById).toHaveBeenCalledWith('teacher-uuid');
+      expect(usersService.getTeacher).toHaveBeenCalledWith('teacher-uuid');
       expect(classesRepository.create).toHaveBeenCalledWith({
         ...createClassDto,
         teacher: mockTeacher,
       });
       expect(classesRepository.save).toHaveBeenCalledWith(mockClass);
-    });
-
-    it('should throw NotFoundException if teacher not found', async () => {
-      usersService.findById.mockResolvedValue(null);
-
-      await expect(service.create(createClassDto)).rejects.toThrow(
-        'Teacher not found',
-      );
-      expect(usersService.findById).toHaveBeenCalledWith('teacher-uuid');
-    });
-
-    it('should throw BadRequestException if user is not a teacher', async () => {
-      const nonTeacherUser: User = {
-        ...mockTeacher,
-        roles: [{ id: '2', role: UserRoleType.STUDENT }],
-      } as User;
-
-      usersService.findById.mockResolvedValue(nonTeacherUser);
-
-      await expect(service.create(createClassDto)).rejects.toThrow(
-        'User is not a teacher',
-      );
-      expect(usersService.findById).toHaveBeenCalledWith('teacher-uuid');
     });
   });
 
@@ -214,7 +192,7 @@ describe('ClassesService', () => {
       } as User;
 
       classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.findById.mockResolvedValue(newTeacher);
+      usersService.getTeacher.mockResolvedValue(newTeacher);
       classesRepository.save.mockResolvedValue({
         ...mockClass,
         name: updateClassDto.name,
@@ -238,7 +216,7 @@ describe('ClassesService', () => {
         where: { id: 'class-uuid' },
         relations: ['teacher', 'enrolledStudents'],
       });
-      expect(usersService.findById).toHaveBeenCalledWith('new-teacher-uuid');
+      expect(usersService.getTeacher).toHaveBeenCalledWith('new-teacher-uuid');
       expect(classesRepository.save).toHaveBeenCalledWith({
         ...mockClass,
         name: updateClassDto.name,
@@ -278,38 +256,6 @@ describe('ClassesService', () => {
         name: partialUpdateDto.name,
         days: partialUpdateDto.days,
       });
-    });
-
-    it('should throw NotFoundException if new teacher not found', async () => {
-      classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.findById.mockResolvedValue(null);
-
-      await expect(
-        service.update('class-uuid', updateClassDto),
-      ).rejects.toThrow('Teacher not found');
-      expect(classesRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'class-uuid' },
-        relations: ['teacher', 'enrolledStudents'],
-      });
-      expect(usersService.findById).toHaveBeenCalledWith('new-teacher-uuid');
-    });
-
-    it('should throw BadRequestException if new teacher is not a teacher', async () => {
-      const nonTeacherUser: User = {
-        ...mockTeacher,
-        roles: [{ id: '2', role: UserRoleType.STUDENT }],
-      } as User;
-      classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.findById.mockResolvedValue(nonTeacherUser);
-
-      await expect(
-        service.update('class-uuid', updateClassDto),
-      ).rejects.toThrow('User is not a teacher');
-      expect(classesRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'class-uuid' },
-        relations: ['teacher', 'enrolledStudents'],
-      });
-      expect(usersService.findById).toHaveBeenCalledWith('new-teacher-uuid');
     });
   });
 
@@ -363,7 +309,7 @@ describe('ClassesService', () => {
   describe('enrollStudent', () => {
     it('should enroll a student in an active class', async () => {
       classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.findById.mockResolvedValue(mockStudent);
+      usersService.getStudent.mockResolvedValue(mockStudent);
       const enrolledClass = {
         ...mockClass,
         enrolledStudents: [mockStudent],
@@ -377,7 +323,7 @@ describe('ClassesService', () => {
         where: { id: 'class-uuid' },
         relations: ['teacher', 'enrolledStudents'],
       });
-      expect(usersService.findById).toHaveBeenCalledWith('student-uuid');
+      expect(usersService.getStudent).toHaveBeenCalledWith('student-uuid');
       expect(classesRepository.save).toHaveBeenCalledWith(enrolledClass);
     });
 
@@ -394,60 +340,13 @@ describe('ClassesService', () => {
       });
     });
 
-    it('should throw NotFoundException if student not found', async () => {
-      classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.findById.mockResolvedValue(null);
-
-      await expect(
-        service.enrollStudent('class-uuid', 'student-uuid'),
-      ).rejects.toThrow('Student not found');
-      expect(classesRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'class-uuid' },
-        relations: ['teacher', 'enrolledStudents'],
-      });
-      expect(usersService.findById).toHaveBeenCalledWith('student-uuid');
-    });
-
-    it('should throw BadRequestException if user is not a student', async () => {
-      classesRepository.findOne.mockResolvedValue(mockClass);
-      const nonStudentUser: User = {
-        ...mockStudent,
-        roles: [{ id: '1', role: UserRoleType.TEACHER }],
-      } as User;
-      usersService.findById.mockResolvedValue(nonStudentUser);
-
-      await expect(
-        service.enrollStudent('class-uuid', 'student-uuid'),
-      ).rejects.toThrow('User is not a student');
-      expect(classesRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'class-uuid' },
-        relations: ['teacher', 'enrolledStudents'],
-      });
-      expect(usersService.findById).toHaveBeenCalledWith('student-uuid');
-    });
-
-    it('should throw BadRequestException if student is inactive', async () => {
-      classesRepository.findOne.mockResolvedValue(mockClass);
-      const inactiveStudent: User = { ...mockStudent, isActive: false };
-      usersService.findById.mockResolvedValue(inactiveStudent);
-
-      await expect(
-        service.enrollStudent('class-uuid', 'student-uuid'),
-      ).rejects.toThrow('Cannot enroll an inactive student');
-      expect(classesRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'class-uuid' },
-        relations: ['teacher', 'enrolledStudents'],
-      });
-      expect(usersService.findById).toHaveBeenCalledWith('student-uuid');
-    });
-
     it('should throw BadRequestException if student is already enrolled', async () => {
       const classWithStudent = {
         ...mockClass,
         enrolledStudents: [mockStudent],
       };
       classesRepository.findOne.mockResolvedValue(classWithStudent);
-      usersService.findById.mockResolvedValue(mockStudent);
+      usersService.getStudent.mockResolvedValue(mockStudent);
 
       await expect(
         service.enrollStudent('class-uuid', 'student-uuid'),
@@ -456,7 +355,7 @@ describe('ClassesService', () => {
         where: { id: 'class-uuid' },
         relations: ['teacher', 'enrolledStudents'],
       });
-      expect(usersService.findById).toHaveBeenCalledWith('student-uuid');
+      expect(usersService.getStudent).toHaveBeenCalledWith('student-uuid');
     });
   });
 

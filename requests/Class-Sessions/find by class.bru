@@ -1,0 +1,75 @@
+meta {
+  name: find by class
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/class-sessions/by-class/{{classId}}?includeInactive=false
+  body: none
+  auth: bearer
+}
+
+params:query {
+  includeInactive: false
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 200) {
+    const sessions = res.getBody();
+    console.log(`✓ Found ${sessions.length} sessions for class`);
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return array of sessions", function() {
+    const data = res.getBody();
+    expect(data).to.be.an("array");
+  });
+}
+
+docs {
+  Get all sessions for a specific class.
+  
+  Path parameters:
+  - classId: UUID of the class
+  
+  Query parameters:
+  - includeInactive: boolean (default: false)
+  
+  Expected response:
+  - status: 200 OK
+  - body: [{ "id": "uuid", ... }]
+}

@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRole } from './entities/user-role.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserRoleType } from 'src/common/enums';
 import { PasswordUtil } from 'src/common/utils/password.util';
+import { EntityUtil } from 'src/common/utils/entity.util';
 
 @Injectable()
 export class UsersService {
@@ -55,6 +60,42 @@ export class UsersService {
       .innerJoin('user.roles', 'role')
       .where('role.role = :role', { role })
       .getMany();
+  }
+
+  async getTeacher(teacherId: string): Promise<User> {
+    const teacher = await this.findById(teacherId);
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+
+    const isTeacher = teacher.roles.some(
+      (role) => role.role === UserRoleType.TEACHER,
+    );
+    if (!isTeacher) {
+      throw new BadRequestException('User is not a teacher');
+    }
+
+    EntityUtil.ensureActive(teacher, 'Teacher is not active');
+
+    return teacher;
+  }
+
+  async getStudent(studentId: string): Promise<User> {
+    const student = await this.findById(studentId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const isStudent = student.roles.some(
+      (role) => role.role === UserRoleType.STUDENT,
+    );
+    if (!isStudent) {
+      throw new BadRequestException('User is not a student');
+    }
+
+    EntityUtil.ensureActive(student, 'Student is not active');
+
+    return student;
   }
 
   async update(id: string, updateData: Partial<User>): Promise<User | null> {

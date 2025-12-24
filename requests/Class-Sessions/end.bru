@@ -1,0 +1,72 @@
+meta {
+  name: end
+  type: http
+  seq: 12
+}
+
+patch {
+  url: {{host}}/class-sessions/{{sessionId}}/end
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 200) {
+    const sessionData = res.getBody();
+    console.log(`✓ Session ended at ${sessionData.actualEndTime}`);
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should have actualEndTime set", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("actualEndTime");
+    expect(data.actualEndTime).to.not.be.null;
+  });
+}
+
+docs {
+  End a class session (sets actualEndTime to now).
+  
+  Path parameters:
+  - sessionId: UUID of the session
+  
+  Validations:
+  - Session must have been started (actualStartTime must be set)
+  
+  Expected response:
+  - status: 200 OK
+  - body: { "id": "uuid", "actualEndTime": "HH:MM:SS", ... }
+}

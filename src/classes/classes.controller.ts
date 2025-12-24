@@ -14,6 +14,7 @@ import {
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { IncludeInactiveDto } from 'src/common/dto/include-inactive.dto';
 
 @Controller('classes')
 export class ClassesController {
@@ -25,8 +26,8 @@ export class ClassesController {
   }
 
   @Get()
-  findAll(@Query('includeInactive') includeInactive?: string) {
-    return this.classesService.findAll(includeInactive === 'true');
+  findAll(@Query() query: IncludeInactiveDto) {
+    return this.classesService.findAll(query.includeInactive);
   }
 
   @Get(':id')

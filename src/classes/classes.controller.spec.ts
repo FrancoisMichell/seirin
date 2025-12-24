@@ -33,6 +33,7 @@ describe('ClassesController', () => {
     isActive: true,
     teacher: mockTeacher,
     enrolledStudents: [],
+    sessions: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -72,11 +73,13 @@ describe('ClassesController', () => {
     it('should call service.findAll with correct parameters', async () => {
       service.findAll.mockResolvedValue([mockClass]);
 
-      const result = await controller.findAll();
-      expect(service.findAll).toHaveBeenCalledWith(false);
+      const result = await controller.findAll({});
+      expect(service.findAll).toHaveBeenCalledWith(undefined);
       expect(result).toEqual([mockClass]);
 
-      const resultWithInactive = await controller.findAll('true');
+      const resultWithInactive = await controller.findAll({
+        includeInactive: true,
+      });
       expect(service.findAll).toHaveBeenCalledWith(true);
       expect(resultWithInactive).toEqual([mockClass]);
     });

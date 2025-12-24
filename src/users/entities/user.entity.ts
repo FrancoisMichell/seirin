@@ -11,6 +11,7 @@ import {
 import { UserRole } from './user-role.entity';
 import { Exclude } from 'class-transformer';
 import { Class } from 'src/classes/entities/class.entity';
+import { ClassSession } from 'src/class-sessions/entities/class-session.entity';
 
 @Entity('users')
 export class User {
@@ -72,4 +73,7 @@ export class User {
 
   @ManyToMany(() => Class, (classEntity) => classEntity.enrolledStudents)
   enrolledClasses: Class[];
+
+  @OneToMany(() => ClassSession, (session) => session.teacher)
+  sessions: ClassSession[];
 }
