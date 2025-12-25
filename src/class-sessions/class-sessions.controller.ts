@@ -17,8 +17,11 @@ import { UpdateClassSessionDto } from './dto/update-class-session.dto';
 import { FindAllClassSessionsDto } from './dto/find-all-class-sessions.dto';
 import { FindByDateRangeDto } from './dto/find-by-date-range.dto';
 import { IncludeInactiveDto } from 'src/common/dto/include-inactive.dto';
+import { Roles } from 'src/common/decorators';
+import { UserRoleType } from 'src/common/enums';
 
 @Controller('class-sessions')
+@Roles(UserRoleType.TEACHER)
 export class ClassSessionsController {
   constructor(private readonly classSessionsService: ClassSessionsService) {}
 

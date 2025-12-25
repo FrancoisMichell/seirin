@@ -10,9 +10,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from 'src/users/entities/user.entity';
+import { Roles } from 'src/common/decorators';
+import { UserRoleType } from 'src/common/enums';
 
 @ApiTags('students')
 @Controller('students')
+@Roles(UserRoleType.TEACHER)
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 

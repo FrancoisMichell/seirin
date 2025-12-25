@@ -12,6 +12,9 @@ import { PasswordUtil } from './common/utils/password.util';
 import { ClassesModule } from './classes/classes.module';
 import { ClassSessionsModule } from './class-sessions/class-sessions.module';
 import { AttendancesModule } from './attendances/attendances.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
 
 @Module({
   imports: [
@@ -30,7 +33,16 @@ import { AttendancesModule } from './attendances/attendances.module';
     AttendancesModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule implements OnModuleInit {
   constructor(private configService: ConfigService) {}

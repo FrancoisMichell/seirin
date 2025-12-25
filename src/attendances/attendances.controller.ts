@@ -14,8 +14,11 @@ import { AttendancesService } from './attendances.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { AttendanceStatus } from 'src/common/enums';
+import { Roles } from 'src/common/decorators';
+import { UserRoleType } from 'src/common/enums';
 
 @Controller('attendances')
+@Roles(UserRoleType.TEACHER)
 export class AttendancesController {
   constructor(private readonly attendancesService: AttendancesService) {}
 
