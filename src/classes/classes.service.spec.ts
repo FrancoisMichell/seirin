@@ -6,7 +6,7 @@ import { Class } from './entities/class.entity';
 import { TestBed } from '@suites/unit';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
-import { UserRoleType } from 'src/common/enums';
+import { UserRoleType, DayOfWeek } from 'src/common/enums';
 
 describe('ClassesService', () => {
   let service: ClassesService;
@@ -30,7 +30,7 @@ describe('ClassesService', () => {
   const mockClass: Class = {
     id: 'class-uuid',
     name: 'Iniciantes - Segunda 18h',
-    days: [1, 3],
+    days: [DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY],
     startTime: '18:00',
     durationMinutes: 60,
     isActive: true,

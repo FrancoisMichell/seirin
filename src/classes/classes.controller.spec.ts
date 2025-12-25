@@ -2,7 +2,7 @@ import { ClassesController } from './classes.controller';
 import { ClassesService } from './classes.service';
 import { Mocked } from '@suites/doubles.jest';
 import { TestBed } from '@suites/unit';
-import { UserRoleType } from 'src/common/enums';
+import { UserRoleType, DayOfWeek } from 'src/common/enums';
 import { User } from 'src/users/entities/user.entity';
 import { Class } from './entities/class.entity';
 
@@ -27,7 +27,7 @@ describe('ClassesController', () => {
   const mockClass: Class = {
     id: 'class-uuid',
     name: 'Iniciantes - Segunda 18h',
-    days: [1, 3],
+    days: [DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY],
     startTime: '18:00',
     durationMinutes: 60,
     isActive: true,

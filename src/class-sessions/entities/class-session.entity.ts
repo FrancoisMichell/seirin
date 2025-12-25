@@ -1,3 +1,4 @@
+import { Attendance } from 'src/attendances/entities/attendance.entity';
 import { Class } from 'src/classes/entities/class.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -5,6 +6,7 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -44,4 +46,7 @@ export class ClassSession {
     onDelete: 'RESTRICT',
   })
   teacher: User;
+
+  @OneToMany(() => Attendance, (attendance) => attendance.session)
+  attendances: Attendance[];
 }

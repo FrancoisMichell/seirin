@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { PasswordUtil } from './common/utils/password.util';
 import { ClassesModule } from './classes/classes.module';
 import { ClassSessionsModule } from './class-sessions/class-sessions.module';
+import { AttendancesModule } from './attendances/attendances.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ClassSessionsModule } from './class-sessions/class-sessions.module';
     UsersModule,
     ClassesModule,
     ClassSessionsModule,
+    AttendancesModule,
   ],
   controllers: [HealthController],
   providers: [],

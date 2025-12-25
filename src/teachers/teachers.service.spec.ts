@@ -91,5 +91,28 @@ describe('TeacherService', () => {
       expect(result).toBeNull();
       expect(usersService.findByRegistry).toHaveBeenCalledWith('123321');
     });
+
+    it('should return null when teacher has no password', async () => {
+      const mockedTeacher = {
+        id: '1',
+        registry: '123321',
+        password: null,
+      } as User;
+      usersService.findByRegistry.mockResolvedValue(mockedTeacher);
+      const result = await service.validateCredentials('123321', 'anyPassword');
+      expect(result).toBeNull();
+      expect(usersService.findByRegistry).toHaveBeenCalledWith('123321');
+    });
+
+    it('should return null when teacher password is undefined', async () => {
+      const mockedTeacher = {
+        id: '1',
+        registry: '123321',
+      } as User;
+      usersService.findByRegistry.mockResolvedValue(mockedTeacher);
+      const result = await service.validateCredentials('123321', 'anyPassword');
+      expect(result).toBeNull();
+      expect(usersService.findByRegistry).toHaveBeenCalledWith('123321');
+    });
   });
 });

@@ -1,0 +1,268 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { Attendance } from './entities/attendance.entity';
+import { UsersService } from 'src/users/users.service';
+import { ClassesService } from 'src/classes/classes.service';
+import { ClassSessionsService } from 'src/class-sessions/class-sessions.service';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EntityUtil } from 'src/common/utils/entity.util';
+import { AttendanceStatus } from 'src/common/enums';
+
+const CHECKED_IN_STATUSES = [
+  AttendanceStatus.PRESENT.toString(),
+  AttendanceStatus.LATE.toString(),
+];
+
+@Injectable()
+export class AttendancesService {
+  constructor(
+    @InjectRepository(Attendance)
+    private attendanceRepository: Repository<Attendance>,
+    private classSessionsService: ClassSessionsService,
+    private classService: ClassesService,
+    private usersService: UsersService,
+  ) {}
+
+  async create(createAttendanceDto: CreateAttendanceDto) {
+    const session = await this.classSessionsService.findOne(
+      createAttendanceDto.sessionId,
+    );
+
+    EntityUtil.ensureActive(
+      session,
+      'Cannot record attendance for an inactive class session',
+    );
+
+    const student = await this.usersService.getStudent(
+      createAttendanceDto.studentId,
+    );
+
+    const existingAttendance = await this.attendanceRepository.findOne({
+      where: {
+        session: { id: createAttendanceDto.sessionId },
+        student: { id: createAttendanceDto.studentId },
+      },
+    });
+
+    if (existingAttendance) {
+      throw new BadRequestException(
+        'Attendance already recorded for this student in this session',
+      );
+    }
+
+    const classEntity = await this.classService.findOne(session.class.id);
+    const isEnrolledClass = classEntity.enrolledStudents.some(
+      (s) => s.id === createAttendanceDto.studentId,
+    );
+
+    const attendanceStatus =
+      createAttendanceDto.status || AttendanceStatus.PRESENT;
+    const attendance = this.attendanceRepository.create({
+      session,
+      student,
+      isEnrolledClass,
+      notes: createAttendanceDto.notes,
+      status: attendanceStatus,
+      checkedInAt: CHECKED_IN_STATUSES.includes(attendanceStatus)
+        ? new Date()
+        : undefined,
+    });
+
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async bulkCreate(sessionId: string) {
+    const session = await this.classSessionsService.findOne(sessionId);
+
+    EntityUtil.ensureActive(
+      session,
+      'Cannot record attendance for an inactive class session',
+    );
+
+    const classEntity = await this.classService.findOne(session.class.id);
+
+    if (!classEntity.enrolledStudents.length) {
+      throw new BadRequestException(
+        'No students enrolled in the class to record attendance for',
+      );
+    }
+
+    const attendances: Attendance[] = [];
+
+    for (const student of classEntity.enrolledStudents) {
+      const existingAttendance = await this.attendanceRepository.findOne({
+        where: {
+          session: { id: sessionId },
+          student: { id: student.id },
+        },
+      });
+
+      if (!existingAttendance) {
+        const attendance = this.attendanceRepository.create({
+          session,
+          student,
+          isEnrolledClass: true,
+          status: AttendanceStatus.PENDING,
+          checkedInAt: null,
+        });
+        attendances.push(attendance);
+      }
+    }
+
+    if (attendances.length > 0) {
+      await this.attendanceRepository.insert(attendances);
+
+      // Buscar as entidades salvas com relações
+      return this.attendanceRepository.find({
+        where: {
+          session: { id: sessionId },
+        },
+        relations: ['session', 'student'],
+        order: { createdAt: 'DESC' },
+        take: attendances.length,
+      });
+    }
+
+    return [];
+  }
+
+  findAll(filters?: {
+    sessionId?: string;
+    studentId?: string;
+    status?: AttendanceStatus;
+    isEnrolledClass?: boolean;
+  }) {
+    const query: {
+      relations: string[];
+      where: Record<string, any>;
+    } = {
+      relations: ['session', 'session.class', 'student'],
+      where: {},
+    };
+
+    if (filters) {
+      if (filters.sessionId) {
+        query.where.session = { id: filters.sessionId };
+      }
+
+      if (filters.studentId) {
+        query.where.student = { id: filters.studentId };
+      }
+
+      if (filters.status) {
+        query.where.status = filters.status;
+      }
+
+      if (filters.isEnrolledClass !== undefined) {
+        query.where.isEnrolledClass = filters.isEnrolledClass;
+      }
+    }
+
+    return this.attendanceRepository.find(query);
+  }
+
+  async findOne(id: string) {
+    const attendance = await this.attendanceRepository.findOne({
+      where: { id },
+      relations: ['session', 'session.class', 'student'],
+    });
+
+    if (!attendance) {
+      throw new NotFoundException(`Attendance with ID ${id} not found`);
+    }
+
+    return attendance;
+  }
+
+  async findBySession(sessionId: string) {
+    await this.classSessionsService.findOne(sessionId);
+
+    return this.attendanceRepository.find({
+      where: { session: { id: sessionId } },
+      relations: ['student'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async findByStudent(studentId: string, page?: number, limit?: number) {
+    await this.usersService.getStudent(studentId);
+
+    return this.attendanceRepository.find({
+      where: { student: { id: studentId } },
+      relations: ['session', 'session.class'],
+      order: { createdAt: 'DESC' },
+      skip: page && limit ? (page - 1) * limit : undefined,
+      take: limit,
+    });
+  }
+
+  async update(id: string, updateAttendanceDto: UpdateAttendanceDto) {
+    const attendance = await this.findOne(id);
+    const shouldCheckIn = CHECKED_IN_STATUSES.includes(
+      updateAttendanceDto.status || '',
+    );
+
+    if (!shouldCheckIn) {
+      attendance.checkedInAt = null;
+    } else {
+      if (!attendance.checkedInAt) {
+        attendance.checkedInAt = new Date();
+      }
+    }
+
+    EntityUtil.updateFields(attendance, updateAttendanceDto, [
+      'sessionId',
+      'studentId',
+    ]);
+
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async markPresent(id: string) {
+    const attendance = await this.findOne(id);
+
+    attendance.status = AttendanceStatus.PRESENT;
+    attendance.checkedInAt = new Date();
+
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async markLate(id: string) {
+    const attendance = await this.findOne(id);
+
+    attendance.status = AttendanceStatus.LATE;
+    attendance.checkedInAt = new Date();
+
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async markAbsent(id: string) {
+    const attendance = await this.findOne(id);
+
+    attendance.status = AttendanceStatus.ABSENT;
+    attendance.checkedInAt = null;
+
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async markExcused(id: string) {
+    const attendance = await this.findOne(id);
+
+    attendance.status = AttendanceStatus.EXCUSED;
+    attendance.checkedInAt = null;
+
+    return this.attendanceRepository.save(attendance);
+  }
+
+  async remove(id: string) {
+    const attendance = await this.findOne(id);
+
+    return this.attendanceRepository.remove(attendance);
+  }
+}

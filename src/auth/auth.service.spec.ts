@@ -75,5 +75,44 @@ describe('AuthService', () => {
         roles: [mockUser.roles[0].role],
       });
     });
+
+    it('should return empty roles array when user has no roles', async () => {
+      const mockUser = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        registry: '123321',
+        roles: null,
+      } as unknown as User;
+      const mockToken = { token: 'jwt_token', user: mockUser };
+
+      jwtService.signAsync.mockResolvedValue('jwt_token');
+
+      const result = await service.login(mockUser);
+
+      expect(result).toEqual(mockToken);
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        username: mockUser.registry,
+        roles: [],
+      });
+    });
+
+    it('should return empty roles array when user roles is undefined', async () => {
+      const mockUser = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        registry: '123321',
+      } as User;
+      const mockToken = { token: 'jwt_token', user: mockUser };
+
+      jwtService.signAsync.mockResolvedValue('jwt_token');
+
+      const result = await service.login(mockUser);
+
+      expect(result).toEqual(mockToken);
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        username: mockUser.registry,
+        roles: [],
+      });
+    });
   });
 });

@@ -2,6 +2,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsString,
@@ -10,6 +11,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { DayOfWeek } from 'src/common/enums';
 
 export class CreateClassDto {
   @IsUUID()
@@ -23,10 +25,8 @@ export class CreateClassDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(7)
-  @IsInt({ each: true })
-  @Min(0, { each: true })
-  @Max(6, { each: true })
-  days: number[];
+  @IsEnum(DayOfWeek, { each: true })
+  days: DayOfWeek[];
 
   @IsString()
   @Matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {

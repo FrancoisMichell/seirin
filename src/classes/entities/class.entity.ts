@@ -1,5 +1,6 @@
 import { ClassSession } from 'src/class-sessions/entities/class-session.entity';
 import { User } from 'src/users/entities/user.entity';
+import { DayOfWeek } from 'src/common/enums';
 import {
   Column,
   CreateDateColumn,
@@ -21,7 +22,7 @@ export class Class {
   name: string;
 
   @Column({ type: 'simple-array' })
-  days: number[];
+  days: DayOfWeek[];
 
   @Column({ type: 'time' })
   startTime: string;

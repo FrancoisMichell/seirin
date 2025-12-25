@@ -450,7 +450,7 @@ describe('UsersService', () => {
         classes: [],
         enrolledClasses: [],
         sessions: [],
-      } as User;
+      } as unknown as User;
 
       usersRepository.update.mockResolvedValue({
         affected: 1,

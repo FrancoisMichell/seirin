@@ -1,0 +1,15 @@
+meta {
+  name: mark absent
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/attendances/{{attendanceId}}/mark-absent
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}
