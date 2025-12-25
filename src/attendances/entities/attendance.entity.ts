@@ -1,6 +1,6 @@
-import { ClassSession } from 'src/class-sessions/entities/class-session.entity';
-import { AttendanceStatus } from 'src/common/enums';
-import { User } from 'src/users/entities/user.entity';
+import { ClassSession } from '../../class-sessions/entities/class-session.entity';
+import { AttendanceStatus } from '../../common/enums';
+import { User } from '../../users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,

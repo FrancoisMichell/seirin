@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateUserNullableFields1734537600000 implements MigrationInterface {
-  name = 'UpdateUserNullableFields1734537600000';
+export class UpdateUserNullableFields1765929886226 implements MigrationInterface {
+  name = 'UpdateUserNullableFields1765929886226';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
