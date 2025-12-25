@@ -15,8 +15,11 @@ import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { IncludeInactiveDto } from 'src/common/dto/include-inactive.dto';
+import { Roles } from 'src/common/decorators';
+import { UserRoleType } from 'src/common/enums';
 
 @Controller('classes')
+@Roles(UserRoleType.TEACHER)
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 

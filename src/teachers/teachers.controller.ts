@@ -9,11 +9,13 @@ import {
 } from '@nestjs/common';
 import { AuthService } from 'src/auth/auth.service';
 import { LocalAuthGuard } from 'src/auth/guards/local-auth.guard';
-import { Public } from 'src/common/decorators';
+import { Public, Roles } from 'src/common/decorators';
 import { TeachersService } from 'src/teachers/teachers.service';
 import { AuthenticatedRequestDto } from './dto/authenticated-request.dto';
+import { UserRoleType } from 'src/common/enums';
 
 @Controller('teacher')
+@Roles(UserRoleType.TEACHER)
 export class TeachersController {
   constructor(
     private authService: AuthService,
