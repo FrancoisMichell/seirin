@@ -10,6 +10,60 @@ get {
   auth: inherit
 }
 
+params:query {
+  ~page: 1
+  ~limit: 10
+}
+
+docs {
+  Get all students with pagination.
+  
+  Optional query parameters:
+  - page: page number (default: 1)
+  - limit: items per page (default: 10)
+  
+  Expected response:
+  - status: 200 OK
+  - body: [{ "id": "uuid", "name": "...", ... }, ...]
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return array of students", function() {
+    const data = res.getBody();
+    expect(Array.isArray(data)).to.be.true;
+  });
+}
+
 settings {
   encodeUrl: true
   timeout: 0

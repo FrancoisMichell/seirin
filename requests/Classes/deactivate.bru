@@ -1,0 +1,69 @@
+meta {
+  name: deactivate
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{host}}/classes/{{classId}}/deactivate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 200) {
+    const classData = res.getBody();
+    console.log(`✓ Class deactivated: ${classData.name}`);
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should have isActive false", function() {
+    const data = res.getBody();
+    expect(data.isActive).to.equal(false);
+  });
+}
+
+docs {
+  Deactivate a class (soft delete).
+  Students remain enrolled but cannot attend or enroll new students.
+  
+  Path parameters:
+  - classId: UUID of the class
+  
+  Expected response:
+  - status: 200 OK
+  - body: { "id": "uuid", "isActive": false, ... }
+}

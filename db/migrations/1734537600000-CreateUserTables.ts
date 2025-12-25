@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateUserTables1765929886226 implements MigrationInterface {
-  name = 'CreateUserTables1765929886226';
+export class CreateUserTables1734537600000 implements MigrationInterface {
+  name = 'CreateUserTables1734537600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -14,7 +14,7 @@ export class CreateUserTables1765929886226 implements MigrationInterface {
       `CREATE TYPE "public"."users_belt_enum" AS ENUM('White', 'Yellow', 'Orange', 'Green', 'Blue', 'Brown', 'Black')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "registry" character varying NOT NULL, "password" character varying NOT NULL, "belt" "public"."users_belt_enum" NOT NULL DEFAULT 'White', "birthday" date, "training_since" date, "is_active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_d3cc7230fc08ea2d6e7a5edc358" UNIQUE ("registry"), CONSTRAINT "UQ_d3cc7230fc08ea2d6e7a5edc358" UNIQUE ("registry"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "registry" character varying, "password" character varying, "belt" "public"."users_belt_enum" NOT NULL DEFAULT 'White', "birthday" date, "training_since" date, "is_active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_d3cc7230fc08ea2d6e7a5edc358" UNIQUE ("registry"), CONSTRAINT "UQ_d3cc7230fc08ea2d6e7a5edc358" UNIQUE ("registry"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `ALTER TABLE "user_roles" ADD CONSTRAINT "FK_472b25323af01488f1f66a06b67" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,

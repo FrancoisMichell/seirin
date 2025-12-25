@@ -1,0 +1,22 @@
+meta {
+  name: find all attendances
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/attendances
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}
+
+params:query {
+  ~sessionId: {{sessionId}}
+  ~studentId: {{studentId}}
+  ~status: present
+  ~isEnrolledClass: true
+}

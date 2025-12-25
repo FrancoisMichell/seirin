@@ -1,0 +1,15 @@
+meta {
+  name: mark present
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/attendances/{{attendanceId}}/mark-present
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}

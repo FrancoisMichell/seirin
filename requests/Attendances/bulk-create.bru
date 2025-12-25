@@ -1,0 +1,15 @@
+meta {
+  name: bulk create attendances
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/attendances/bulk/{{sessionId}}
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}

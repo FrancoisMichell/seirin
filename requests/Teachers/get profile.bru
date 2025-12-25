@@ -1,17 +1,69 @@
 meta {
   name: get profile
   type: http
-  seq: 2
+  seq: 6
 }
 
 get {
-  url: http://localhost:3000/teacher/me
+  url: {{host}}/teacher/me
   body: none
   auth: bearer
 }
 
 auth:bearer {
   token: {{SeirinAuthToken}}
+}
+
+docs {
+  Get the authenticated teacher's profile.
+  
+  Requires:
+  - Valid JWT token in Authorization header
+  
+  Expected response:
+  - status: 200 OK
+  - body: { "id": "uuid", "username": "...", "name": "...", "email": "..." }
+  
+  Note: Must be logged in first (run login request)
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return teacher profile", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("id");
+    expect(data).to.have.property("username");
+    expect(data).to.not.have.property("password");
+  });
 }
 
 settings {

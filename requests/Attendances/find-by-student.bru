@@ -1,0 +1,20 @@
+meta {
+  name: find attendances by student
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/attendances/student/{{studentId}}
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}
+
+params:query {
+  ~page: 1
+  ~limit: 10
+}

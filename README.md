@@ -10,12 +10,17 @@ API para gerenciamento de alunos de escola de artes marciais (Karatê), constru�
 ## 🚀 Funcionalidades
 
 - ✅ CRUD completo de estudantes
+- ✅ CRUD completo de professores (teachers)
+- ✅ Gestão de turmas (classes) com matrícula de alunos
+- ✅ Gestão de sessões de aulas (class sessions) com registro de presença
+- ✅ Autenticação JWT para professores
 - ✅ Validação de dados com class-validator
 - ✅ Documentação interativa com Swagger/OpenAPI
 - ✅ Migrations automáticas do banco de dados
 - ✅ Testes unitários e E2E com 100% de cobertura
 - ✅ Docker e Docker Compose para desenvolvimento e produção
 - ✅ CI/CD com GitHub Actions
+- ✅ Coleção completa de requisições no Bruno
 - ✅ Health check endpoint
 
 ## 📋 Pré-requisitos
@@ -102,15 +107,72 @@ A documentação interativa está disponível em:
 
 ### Endpoints principais:
 
+#### Students (Alunos)
+
 | Método | Endpoint        | Descrição              |
 | ------ | --------------- | ---------------------- |
 | POST   | `/students`     | Criar novo aluno       |
 | GET    | `/students`     | Listar todos os alunos |
 | GET    | `/students/:id` | Buscar aluno por ID    |
 | PATCH  | `/students/:id` | Atualizar aluno        |
-| GET    | `/health`       | Health check           |
+| DELETE | `/students/:id` | Deletar aluno          |
 
-### Exemplo de requisição (POST /students):
+#### Teachers (Professores)
+
+| Método | Endpoint        | Descrição                |
+| ------ | --------------- | ------------------------ |
+| POST   | `/teachers`     | Criar novo professor     |
+| GET    | `/teachers`     | Listar todos professores |
+| GET    | `/teachers/:id` | Buscar professor por ID  |
+| PATCH  | `/teachers/:id` | Atualizar professor      |
+| DELETE | `/teachers/:id` | Deletar professor        |
+| GET    | `/teachers/me`  | Perfil do professor      |
+
+#### Classes (Turmas)
+
+| Método | Endpoint                           | Descrição              |
+| ------ | ---------------------------------- | ---------------------- |
+| POST   | `/classes`                         | Criar nova turma       |
+| GET    | `/classes`                         | Listar todas as turmas |
+| GET    | `/classes/:id`                     | Buscar turma por ID    |
+| PATCH  | `/classes/:id`                     | Atualizar turma        |
+| PATCH  | `/classes/:id/activate`            | Ativar turma           |
+| PATCH  | `/classes/:id/deactivate`          | Desativar turma        |
+| POST   | `/classes/:id/enroll/:studentId`   | Matricular aluno       |
+| DELETE | `/classes/:id/unenroll/:studentId` | Desmatricular aluno    |
+
+#### Class Sessions (Sessões de Aula)
+
+| Método | Endpoint                            | Descrição               |
+| ------ | ----------------------------------- | ----------------------- |
+| POST   | `/class-sessions`                   | Criar nova sessão       |
+| GET    | `/class-sessions`                   | Listar todas as sessões |
+| GET    | `/class-sessions/:id`               | Buscar sessão por ID    |
+| GET    | `/class-sessions/by-class/:classId` | Sessões por turma       |
+| GET    | `/class-sessions/by-teacher/:id`    | Sessões por professor   |
+| GET    | `/class-sessions/by-date-range`     | Sessões por período     |
+| PATCH  | `/class-sessions/:id`               | Atualizar sessão        |
+| PATCH  | `/class-sessions/:id/start`         | Iniciar sessão          |
+| PATCH  | `/class-sessions/:id/end`           | Finalizar sessão        |
+| PATCH  | `/class-sessions/:id/activate`      | Ativar sessão           |
+| PATCH  | `/class-sessions/:id/deactivate`    | Desativar sessão        |
+| DELETE | `/class-sessions/:id`               | Deletar sessão          |
+
+#### Authentication (Autenticação)
+
+| Método | Endpoint         | Descrição       |
+| ------ | ---------------- | --------------- |
+| POST   | `/teacher/login` | Login professor |
+
+#### Health
+
+| Método | Endpoint  | Descrição    |
+| ------ | --------- | ------------ |
+| GET    | `/health` | Health check |
+
+### Exemplos de requisições:
+
+#### POST /students
 
 ```json
 {
@@ -118,6 +180,29 @@ A documentação interativa está disponível em:
   "belt": "White",
   "birthday": "2000-01-15",
   "trainingSince": "2020-06-01"
+}
+```
+
+#### POST /classes
+
+```json
+{
+  "name": "Iniciantes - Segunda 18h",
+  "days": [1, 3],
+  "startTime": "18:00",
+  "durationMinutes": 60,
+  "teacherId": "teacher-uuid"
+}
+```
+
+#### POST /class-sessions
+
+```json
+{
+  "classId": "class-uuid",
+  "date": "2025-12-30",
+  "actualStartTime": "18:00",
+  "notes": "Introdução ao Jiu-Jitsu"
 }
 ```
 
@@ -162,7 +247,9 @@ DB_HOST=127.0.0.1 npm run migration:run
 DB_HOST=127.0.0.1 npm run migration:revert
 ```
 
-### Estrutura da tabela `student`:
+### Estrutura das principais tabelas:
+
+#### Tabela `student`:
 
 | Campo          | Tipo      | Descrição                        |
 | -------------- | --------- | -------------------------------- |
@@ -174,6 +261,47 @@ DB_HOST=127.0.0.1 npm run migration:revert
 | is_active      | BOOLEAN   | Status ativo/inativo             |
 | created_at     | TIMESTAMP | Data de criação                  |
 | updated_at     | TIMESTAMP | Data de atualização              |
+
+#### Tabela `user` (Teachers):
+
+| Campo      | Tipo      | Descrição               |
+| ---------- | --------- | ----------------------- |
+| id         | UUID      | Identificador único     |
+| name       | VARCHAR   | Nome completo           |
+| username   | VARCHAR   | Login (único)           |
+| password   | VARCHAR   | Senha (hash bcrypt)     |
+| email      | VARCHAR   | Email (único, opcional) |
+| is_active  | BOOLEAN   | Status ativo/inativo    |
+| created_at | TIMESTAMP | Data de criação         |
+| updated_at | TIMESTAMP | Data de atualização     |
+
+#### Tabela `class`:
+
+| Campo            | Tipo      | Descrição                      |
+| ---------------- | --------- | ------------------------------ |
+| id               | UUID      | Identificador único            |
+| name             | VARCHAR   | Nome da turma                  |
+| days             | INT[]     | Dias da semana (0=Dom...6=Sab) |
+| start_time       | TIME      | Horário de início              |
+| duration_minutes | INT       | Duração em minutos             |
+| teacher_id       | UUID      | ID do professor (FK)           |
+| is_active        | BOOLEAN   | Status ativo/inativo           |
+| created_at       | TIMESTAMP | Data de criação                |
+| updated_at       | TIMESTAMP | Data de atualização            |
+
+#### Tabela `class_session`:
+
+| Campo             | Tipo      | Descrição               |
+| ----------------- | --------- | ----------------------- |
+| id                | UUID      | Identificador único     |
+| class_id          | UUID      | ID da turma (FK)        |
+| date              | DATE      | Data da sessão          |
+| actual_start_time | TIME      | Horário real de início  |
+| actual_end_time   | TIME      | Horário real de término |
+| notes             | TEXT      | Observações             |
+| is_active         | BOOLEAN   | Status ativo/inativo    |
+| created_at        | TIMESTAMP | Data de criação         |
+| updated_at        | TIMESTAMP | Data de atualização     |
 
 ## 🔐 Variáveis de Ambiente
 

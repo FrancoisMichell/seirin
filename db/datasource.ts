@@ -17,7 +17,7 @@ export const datasourceOptions: DataSourceOptions = {
   password: configService.getOrThrow<string>('DB_PASSWORD'),
   database: configService.getOrThrow<string>('DB_NAME'),
   entities: isTest ? ['src/**/*.entity.ts'] : ['dist/**/*.entity.js'],
-  migrations: ['dist/db/migrations/*.js'],
+  migrations: isTest ? ['db/migrations/*.ts'] : ['dist/db/migrations/*.js'],
   migrationsTableName: 'migrations',
   migrationsRun: false,
   synchronize: false,

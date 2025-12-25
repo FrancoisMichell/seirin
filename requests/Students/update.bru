@@ -5,15 +5,72 @@ meta {
 }
 
 patch {
-  url: {{host}}/students/f15a3560-66f6-45f5-9e0a-1f5865711297
+  url: {{host}}/students/{{studentId}}
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "name": "Instrutor B"
+    "name": "Updated Student Name",
+    "email": "updated@example.com",
+    "belt": "yellow"
   }
+}
+
+docs {
+  Update a student's information.
+  
+  URL parameter:
+  - id: student UUID (use {{studentId}} variable)
+  
+  Optional fields:
+  - name: new name
+  - email: new email
+  - phone: new phone
+  - belt: new belt level
+  
+  Expected response:
+  - status: 200 OK
+  - body: { "id": "uuid", "name": "...", ... }
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return updated student data", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("id");
+    expect(data).to.have.property("name");
+  });
 }
 
 settings {

@@ -1,0 +1,67 @@
+meta {
+  name: delete teacher
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{host}}/teachers/{{teacherId}}
+  body: none
+  auth: inherit
+}
+
+docs {
+  Delete a teacher by ID.
+  
+  URL parameter:
+  - id: teacher UUID (use {{teacherId}} variable)
+  
+  Expected response:
+  - status: 200 OK or 204 No Content
+  
+  Warning: This action is irreversible!
+}
+
+script:pre-request {
+  // Uncomment to add confirmation
+  // const confirm = prompt("Are you sure you want to delete this teacher?");
+  // if (!confirm) throw new Error("Deletion cancelled");
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+}
+
+tests {
+  test("should return success status", function() {
+    const status = res.getStatus();
+    expect([200, 204]).to.include(status);
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,15 @@
+meta {
+  name: find attendances by session
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/attendances/session/{{sessionId}}
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}

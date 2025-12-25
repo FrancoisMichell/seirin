@@ -1,0 +1,15 @@
+meta {
+  name: mark excused
+  type: http
+  seq: 11
+}
+
+patch {
+  url: {{baseUrl}}/attendances/{{attendanceId}}/mark-excused
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}

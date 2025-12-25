@@ -1,0 +1,76 @@
+meta {
+  name: find by date range
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/class-sessions/by-date-range?startDate=2025-12-01&endDate=2025-12-31&includeInactive=false
+  body: none
+  auth: bearer
+}
+
+params:query {
+  startDate: 2025-12-01
+  endDate: 2025-12-31
+  includeInactive: false
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 200) {
+    const sessions = res.getBody();
+    console.log(`✓ Found ${sessions.length} sessions in date range`);
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return array of sessions", function() {
+    const data = res.getBody();
+    expect(data).to.be.an("array");
+  });
+}
+
+docs {
+  Get all sessions within a date range.
+  
+  Query parameters (required):
+  - startDate: start date (YYYY-MM-DD)
+  - endDate: end date (YYYY-MM-DD)
+  - includeInactive: boolean (default: false)
+  
+  Expected response:
+  - status: 200 OK
+  - body: [{ "id": "uuid", ... }]
+}

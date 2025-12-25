@@ -1,0 +1,77 @@
+meta {
+  name: find all teachers
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/teachers
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~page: 1
+  ~limit: 10
+}
+
+docs {
+  Get all teachers with pagination.
+  
+  Optional query parameters:
+  - page: page number (default: 1)
+  - limit: items per page (default: 10)
+  
+  Expected response:
+  - status: 200 OK
+  - body: [{ "id": "uuid", "username": "...", "name": "...", "email": "..." }, ...]
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return array of teachers", function() {
+    const data = res.getBody();
+    expect(Array.isArray(data)).to.be.true;
+  });
+  
+  test("teachers should not have password field", function() {
+    const data = res.getBody();
+    if (data.length > 0) {
+      expect(data[0]).to.not.have.property("password");
+    }
+  });
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

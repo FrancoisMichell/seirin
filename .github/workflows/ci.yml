@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   build-test:
@@ -33,7 +33,7 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: seirin_test
-      RUN_MIGRATIONS: "false"
+      RUN_MIGRATIONS: 'false'
       NODE_ENV: test
     steps:
       - uses: actions/checkout@v4

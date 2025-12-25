@@ -1,0 +1,85 @@
+meta {
+  name: create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/classes
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+body:json {
+  {
+    "teacherId": "{{teacherId}}",
+    "name": "Jiu-Jitsu Iniciantes - Segunda 18h",
+    "days": [1, 3, 5],
+    "startTime": "18:00",
+    "durationMinutes": 90
+  }
+}
+
+docs {
+  Create a new class.
+  
+  Required fields:
+  - teacherId: UUID of the teacher
+  - name: class name
+  - days: array of weekdays (0=Sunday, 1=Monday, ..., 6=Saturday)
+  - startTime: start time in HH:MM format
+  - durationMinutes: duration in minutes (30-300)
+  
+  Expected response:
+  - status: 201 Created
+  - body: { "id": "uuid", "name": "...", "teacher": {...}, ... }
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 201) {
+    const classData = res.getBody();
+    bru.setEnvVar("classId", classData.id);
+    console.log("Class created with ID:", classData.id);
+  }
+}
+
+tests {
+  test("should return 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("should return class data", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("id");
+    expect(data).to.have.property("name");
+    expect(data).to.have.property("teacher");
+  });
+}

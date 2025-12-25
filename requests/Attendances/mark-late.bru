@@ -1,0 +1,15 @@
+meta {
+  name: mark late
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/attendances/{{attendanceId}}/mark-late
+  body: none
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}

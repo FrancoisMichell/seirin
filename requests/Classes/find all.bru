@@ -1,0 +1,72 @@
+meta {
+  name: find all
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/classes?includeInactive=true
+  body: none
+  auth: bearer
+}
+
+params:query {
+  includeInactive: true
+}
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 200) {
+    const classes = res.getBody();
+    console.log(`Found ${classes.length} classes`);
+  }
+}
+
+tests {
+  test("should return 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("should return array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an("array");
+  });
+}
+
+docs {
+  List all active classes.
+  
+  Query parameters:
+  - includeInactive: "true" to include inactive classes (optional)
+  
+  Expected response:
+  - status: 200 OK
+  - body: [{ "id": "uuid", "name": "...", "teacher": {...}, "enrolledStudents": [...] }]
+}

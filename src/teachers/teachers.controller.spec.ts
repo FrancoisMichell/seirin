@@ -30,7 +30,7 @@ describe('TeachersController', () => {
         id: '550e8400-e29b-41d4-a716-446655440000',
         registry: '123321',
       } as User;
-      const mockToken = { access_token: 'jwt_token' };
+      const mockToken = { token: 'jwt_token', user: mockUser };
 
       authService.login.mockResolvedValue(mockToken);
 

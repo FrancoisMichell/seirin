@@ -1,0 +1,22 @@
+meta {
+  name: update attendance
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/attendances/{{attendanceId}}
+  body: json
+  auth: bearer
+
+auth:bearer {
+  token: {{SeirinAuthToken}}
+}
+}
+
+body:json {
+  {
+    "status": "late",
+    "notes": "Arrived 15 minutes late"
+  }
+}

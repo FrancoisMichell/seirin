@@ -12,8 +12,73 @@ post {
 
 body:json {
   {
-    "name": "Teste dos Anjos"
+    "name": "Karate Student",
+    "email": "student@example.com",
+    "phone": "+55 11 98765-4321",
+    "belt": "white"
   }
+}
+
+docs {
+  Create a new student.
+  
+  Required fields:
+  - name: student's full name
+  
+  Optional fields:
+  - email: student's email
+  - phone: contact phone
+  - belt: current belt level
+  
+  Expected response:
+  - status: 201 Created
+  - body: { "id": "uuid", "name": "...", ... }
+}
+
+script:post-response {
+  // Auto-retry with login if unauthorized
+  if (res.getStatus() === 401 && !bru.getVar("isRetry")) {
+    console.log("🔒 Token expired. Auto-login and retry...");
+    
+    // Login request using environment variables
+    const loginRes = await bru.sendRequest({
+      url: bru.getEnvVar("host") + "/teacher/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: bru.getEnvVar("loginUsername"),
+        password: bru.getEnvVar("loginPassword")
+      })
+    });
+    
+    if (loginRes.status === 200) {
+      const token = loginRes.data.token;
+      bru.setEnvVar("SeirinAuthToken", token);
+      console.log("✓ Re-authenticated successfully");
+      
+      // Retry original request
+      bru.setVar("isRetry", true);
+      await bru.sendRequest();
+    }
+  }
+  
+  if (res.getStatus() === 201) {
+    const student = res.getBody();
+    bru.setEnvVar("studentId", student.id);
+    console.log("Student created with ID:", student.id);
+  }
+}
+
+tests {
+  test("should return 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("should return student data", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("id");
+    expect(data).to.have.property("name");
+  });
 }
 
 settings {

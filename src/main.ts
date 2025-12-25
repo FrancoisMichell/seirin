@@ -22,7 +22,19 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+
+      disableErrorMessages: process.env.NODE_ENV === 'production',
+      validationError: {
+        target: false,
+        value: false,
+      },
+
+      stopAtFirstError: false,
     }),
   );
   app.use(helmet());

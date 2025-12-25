@@ -1,4 +1,10 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { Belt } from '../../common/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -7,6 +13,14 @@ export class CreateStudentDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiProperty({
+    description: 'Registry number of the student',
+    example: '2021001',
+  })
+  @IsOptional()
+  @IsString()
+  registry?: string;
 
   @ApiProperty({
     description: 'Belt level of the student',
@@ -19,6 +33,7 @@ export class CreateStudentDto {
     description: 'Birthday of the student',
     example: '2000-01-01',
   })
+  @IsOptional()
   @IsDateString()
   birthday?: Date;
 
@@ -26,6 +41,7 @@ export class CreateStudentDto {
     description: 'Date since the student has been training',
     example: '2015-06-01',
   })
+  @IsOptional()
   @IsDateString()
   trainingSince?: Date;
 }

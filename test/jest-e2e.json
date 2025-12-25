@@ -9,5 +9,6 @@
   "setupFilesAfterEnv": ["<rootDir>/setup-e2e.ts"],
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1"
-  }
+  },
+  "maxWorkers": 1
 }

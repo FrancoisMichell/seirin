@@ -10,7 +10,8 @@ export class AuthService {
     const roles = user.roles?.map((r) => r.role) || [];
     const payload = { sub: user.id, username: user.registry, roles };
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      token: await this.jwtService.signAsync(payload),
+      user,
     };
   }
 }
