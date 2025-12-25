@@ -30,6 +30,12 @@ describe('Validation (e2e)', () => {
 
     // Create test teacher user
     const dataSource = app.get(DataSource);
+
+    // Run migrations first
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await dataSource.dropDatabase();
+    await dataSource.runMigrations();
+
     const hashedPassword = await PasswordUtil.hashPassword('teste123');
     await dataSource.query(
       `INSERT INTO users (id, name, registry, password, belt, is_active) 
@@ -45,9 +51,9 @@ describe('Validation (e2e)', () => {
     const login = await request(getServer(app))
       .post('/teacher/login')
       .send({ username: '123321', password: 'teste123' })
-      .expect(201);
+      .expect(200);
 
-    authToken = (login.body as Record<string, unknown>).access_token as string;
+    authToken = (login.body as Record<string, unknown>).token as string;
   });
 
   afterAll(async () => {

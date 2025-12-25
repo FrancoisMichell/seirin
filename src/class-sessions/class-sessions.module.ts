@@ -14,5 +14,6 @@ import { UsersModule } from 'src/users/users.module';
   ],
   controllers: [ClassSessionsController],
   providers: [ClassSessionsService],
+  exports: [ClassSessionsService],
 })
 export class ClassSessionsModule {}
