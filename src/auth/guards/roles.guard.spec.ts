@@ -29,8 +29,22 @@ describe('RolesGuard', () => {
     expect(guard).toBeDefined();
   });
 
+  it('should allow access when endpoint is public', () => {
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(true) // isPublic
+      .mockReturnValueOnce(undefined); // requiredRoles
+
+    const context = createMockExecutionContext({});
+
+    expect(guard.canActivate(context)).toBe(true);
+  });
+
   it('should allow access when no roles are required', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(false) // isPublic
+      .mockReturnValueOnce(undefined); // requiredRoles
 
     const context = createMockExecutionContext({});
 
@@ -40,7 +54,8 @@ describe('RolesGuard', () => {
   it('should deny access when user is not authenticated', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue([UserRoleType.TEACHER]);
+      .mockReturnValueOnce(false) // isPublic
+      .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({});
 
@@ -50,7 +65,8 @@ describe('RolesGuard', () => {
   it('should deny access when user has no roles', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue([UserRoleType.TEACHER]);
+      .mockReturnValueOnce(false) // isPublic
+      .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({
       user: { userId: '123', roles: [] },
@@ -62,7 +78,8 @@ describe('RolesGuard', () => {
   it('should allow access when user has required role', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue([UserRoleType.TEACHER]);
+      .mockReturnValueOnce(false) // isPublic
+      .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({
       user: { userId: '123', roles: [UserRoleType.TEACHER] },
@@ -74,7 +91,8 @@ describe('RolesGuard', () => {
   it('should allow access when user has one of multiple required roles', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue([UserRoleType.TEACHER, UserRoleType.STUDENT]);
+      .mockReturnValueOnce(false) // isPublic
+      .mockReturnValueOnce([UserRoleType.TEACHER, UserRoleType.STUDENT]); // requiredRoles
 
     const context = createMockExecutionContext({
       user: { userId: '123', roles: [UserRoleType.STUDENT] },
@@ -86,7 +104,8 @@ describe('RolesGuard', () => {
   it('should deny access when user does not have required role', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue([UserRoleType.TEACHER]);
+      .mockReturnValueOnce(false) // isPublic
+      .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({
       user: { userId: '123', roles: [UserRoleType.STUDENT] },
