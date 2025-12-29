@@ -16,13 +16,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: seirin_test
+          POSTGRES_USER: seirin_test
+          POSTGRES_PASSWORD: seirin_test_password
+          POSTGRES_DB: seirin_test_db
         ports:
           - 5433:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U seirin_test"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -30,9 +30,9 @@ jobs:
       DB_TYPE: postgres
       DB_HOST: 127.0.0.1
       DB_PORT: 5433
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: seirin_test
+      DB_USER: seirin_test
+      DB_PASSWORD: seirin_test_password
+      DB_NAME: seirin_test_db
       RUN_MIGRATIONS: 'false'
       NODE_ENV: test
     steps:
