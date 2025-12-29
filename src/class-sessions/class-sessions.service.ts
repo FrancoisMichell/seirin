@@ -6,7 +6,13 @@ import {
 import { CreateClassSessionDto } from './dto/create-class-session.dto';
 import { UpdateClassSessionDto } from './dto/update-class-session.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  FindOperator,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { ClassesService } from 'src/classes/classes.service';
 import { UsersService } from 'src/users/users.service';
 import { ClassSession } from './entities/class-session.entity';
@@ -66,7 +72,16 @@ export class ClassSessionsService {
   }): Promise<ClassSession[]> {
     const query: {
       relations: string[];
-      where: Record<string, any>;
+      where: Record<
+        string,
+        | string
+        | boolean
+        | { id: string }
+        | Date
+        | FindOperator<Date>
+        | null
+        | undefined
+      >;
     } = {
       relations: ['class', 'teacher'],
       where: {},

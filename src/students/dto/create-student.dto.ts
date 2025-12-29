@@ -1,10 +1,11 @@
 import {
-  IsDateString,
+  IsDate,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { Belt } from '../../common/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -34,7 +35,8 @@ export class CreateStudentDto {
     example: '2000-01-01',
   })
   @IsOptional()
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   birthday?: Date;
 
   @ApiProperty({
@@ -42,6 +44,7 @@ export class CreateStudentDto {
     example: '2015-06-01',
   })
   @IsOptional()
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   trainingSince?: Date;
 }

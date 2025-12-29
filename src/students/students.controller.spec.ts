@@ -81,7 +81,7 @@ describe('StudentsController', () => {
 
       mockStudentsService.findAll.mockResolvedValue(students);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({});
 
       expect(mockStudentsService.findAll).toHaveBeenCalled();
       expect(result).toEqual(students);

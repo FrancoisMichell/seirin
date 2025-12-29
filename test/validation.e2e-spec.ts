@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from './../src/app.module';
 import { DataSource } from 'typeorm';
 import { PasswordUtil } from 'src/common/utils/password.util';
+import { createTestApp, setupTestDatabase, teardownTestApp } from './setup-e2e';
+import { getBody } from './helpers/response-helper';
 
 function getServer(app: INestApplication) {
   return app.getHttpServer() as unknown as Parameters<typeof request>[0];
@@ -11,30 +11,15 @@ function getServer(app: INestApplication) {
 
 describe('Validation (e2e)', () => {
   let app: INestApplication;
+  let dataSource: DataSource;
   let authToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const testContext = await createTestApp();
+    app = testContext.app;
+    dataSource = testContext.dataSource;
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
-    await app.init();
-
-    // Create test teacher user
-    const dataSource = app.get(DataSource);
-
-    // Run migrations first
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await dataSource.dropDatabase();
-    await dataSource.runMigrations();
+    await setupTestDatabase(dataSource);
 
     const hashedPassword = await PasswordUtil.hashPassword('teste123');
     await dataSource.query(
@@ -53,11 +38,11 @@ describe('Validation (e2e)', () => {
       .send({ username: '123321', password: 'teste123' })
       .expect(200);
 
-    authToken = (login.body as Record<string, unknown>).token as string;
+    authToken = getBody<{ token: string }>(login).token;
   });
 
   afterAll(async () => {
-    await app.close();
+    await teardownTestApp(app, dataSource);
   });
 
   describe('POST /students', () => {
@@ -67,7 +52,7 @@ describe('Validation (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: '', belt: 'White' })
         .expect(400);
-      const body = res.body as Record<string, unknown>;
+      const body = getBody<{ message: string }>(res);
       expect(body).toHaveProperty('message');
     });
 
@@ -77,7 +62,7 @@ describe('Validation (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'Purple' })
         .expect(400);
-      const body = res.body as Record<string, unknown>;
+      const body = getBody<{ message: string }>(res);
       expect(body).toHaveProperty('message');
     });
 
@@ -87,7 +72,7 @@ describe('Validation (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'White', birthday: '2000-13-45' })
         .expect(400);
-      const body = res.body as Record<string, unknown>;
+      const body = getBody<{ message: string }>(res);
       expect(body).toHaveProperty('message');
     });
 
@@ -97,7 +82,7 @@ describe('Validation (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'White', trainingSince: 'abcd' })
         .expect(400);
-      const body = res.body as Record<string, unknown>;
+      const body = getBody<{ message: string }>(res);
       expect(body).toHaveProperty('message');
     });
 
@@ -107,7 +92,7 @@ describe('Validation (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Test', belt: 'White', unknownField: 'x' })
         .expect(400);
-      const body = res.body as Record<string, unknown>;
+      const body = getBody<{ message: string }>(res);
       expect(body).toHaveProperty('message');
     });
   });
