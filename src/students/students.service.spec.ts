@@ -5,6 +5,8 @@ import { UsersService } from 'src/users/users.service';
 import { TestBed } from '@suites/unit';
 import { Mocked } from '@suites/doubles.jest';
 import { User } from 'src/users/entities/user.entity';
+import { QueryStudentsDto } from './dto/query-students.dto';
+import { PaginatedResponse } from 'src/common/interfaces';
 
 describe('StudentsService', () => {
   let service: StudentsService;
@@ -72,30 +74,95 @@ describe('StudentsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of students', async () => {
+    it('should return an array of students without filters', async () => {
+      const emptyQuery: QueryStudentsDto = {};
       const students = [
         { id: '1', name: 'John Doe', roles: [studentRole] },
         { id: '2', name: 'Jane Doe', roles: [studentRole] },
       ] as User[];
+      const paginatedStudents: PaginatedResponse<User> = {
+        data: students,
+        meta: {
+          total: students.length,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      };
 
-      usersService.findByRole.mockResolvedValue(students);
+      usersService.findByRole.mockResolvedValue(paginatedStudents);
 
-      const result = await service.findAll();
+      const result = await service.findAll(emptyQuery);
       expect(usersService.findByRole).toHaveBeenCalledWith(
         UserRoleType.STUDENT,
+        {},
       );
-      expect(result).toEqual(students);
-      expect(result).toHaveLength(2);
+      expect(result).toStrictEqual(paginatedStudents);
     });
 
-    it('should return an empty array if no students found', async () => {
-      usersService.findByRole.mockResolvedValue([]);
-      const result = await service.findAll();
+    it('should return an empty array if no students found without filters', async () => {
+      const emptyQuery: QueryStudentsDto = {};
+      const paginatedStudents: PaginatedResponse<User> = {
+        data: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      };
+
+      usersService.findByRole.mockResolvedValue(paginatedStudents);
+
+      const result = await service.findAll(emptyQuery);
       expect(usersService.findByRole).toHaveBeenCalledWith(
         UserRoleType.STUDENT,
+        {},
       );
-      expect(result).toEqual([]);
-      expect(result).toHaveLength(0);
+      expect(result).toStrictEqual(paginatedStudents);
+    });
+
+    it.each`
+      scenario                   | queryParams                           | expectedCallParams
+      ${'with name filter'}      | ${{ name: 'John' }}                   | ${{ name: 'John' }}
+      ${'with registry filter'}  | ${{ registry: '2021001' }}            | ${{ registry: '2021001' }}
+      ${'with belt filter'}      | ${{ belt: Belt.Blue }}                | ${{ belt: Belt.Blue }}
+      ${'with isActive filter'}  | ${{ isActive: true }}                 | ${{ isActive: true }}
+      ${'with multiple filters'} | ${{ name: 'Jane', belt: Belt.Green }} | ${{ name: 'Jane', belt: Belt.Green }}
+    `(
+      'should return students $scenario',
+      async ({ queryParams, expectedCallParams }) => {
+        const students = [
+          { id: '1', name: 'John Doe', roles: [studentRole] },
+        ] as User[];
+        const paginatedStudents: PaginatedResponse<User> = {
+          data: students,
+          meta: {
+            total: students.length,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+          },
+        };
+
+        usersService.findByRole.mockResolvedValue(paginatedStudents);
+
+        const result = await service.findAll(queryParams as QueryStudentsDto);
+        expect(usersService.findByRole).toHaveBeenCalledWith(
+          UserRoleType.STUDENT,
+          expectedCallParams,
+        );
+        expect(result).toStrictEqual(paginatedStudents);
+      },
+    );
+
+    it('should throw an error if retrieval fails', async () => {
+      const emptyQuery: QueryStudentsDto = {};
+
+      usersService.findByRole.mockRejectedValue(new Error('Retrieval failed'));
+      await expect(service.findAll(emptyQuery)).rejects.toThrow(
+        'Retrieval failed',
+      );
     });
   });
 

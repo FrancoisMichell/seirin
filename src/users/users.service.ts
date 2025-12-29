@@ -10,6 +10,8 @@ import { User } from './entities/user.entity';
 import { UserRoleType } from 'src/common/enums';
 import { PasswordUtil } from 'src/common/utils/password.util';
 import { EntityUtil } from 'src/common/utils/entity.util';
+import { QueryUsersDto } from './dto/query-users.dto';
+import { PaginatedResponse } from 'src/common/interfaces';
 
 @Injectable()
 export class UsersService {
@@ -24,20 +26,15 @@ export class UsersService {
     userData: Partial<User>,
     roles: UserRoleType[],
   ): Promise<User | null> {
-    //TODO: Validar se fazendo com user.roles = [lista de roles] funciona. Dessa forma usaria o insert apenas 1x ao invés de 2
-
     if (userData.password) {
       userData.password = await PasswordUtil.hashPassword(userData.password);
     }
-    const user = this.usersRepository.create(userData);
-    const newUser = await this.usersRepository.insert(user);
+    const user = this.usersRepository.create({
+      ...userData,
+      roles: roles.map((role) => this.userRolesRepository.create({ role })),
+    });
 
-    const userRoles = roles.map((role) =>
-      this.userRolesRepository.create({ user, role }),
-    );
-    await this.userRolesRepository.insert(userRoles);
-
-    return this.findById(newUser.identifiers[0].id as string);
+    return this.usersRepository.save(user);
   }
 
   async findById(id: string): Promise<User | null> {
@@ -54,12 +51,55 @@ export class UsersService {
     });
   }
 
-  async findByRole(role: UserRoleType): Promise<User[]> {
-    return this.usersRepository
+  async findByRole(
+    role: UserRoleType,
+    query: QueryUsersDto,
+  ): Promise<PaginatedResponse<User>> {
+    const { page = 1, limit = 10, name, registry, belt, isActive } = query;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
-      .innerJoin('user.roles', 'role')
-      .where('role.role = :role', { role })
-      .getMany();
+      .leftJoinAndSelect('user.roles', 'role')
+      .where('role.role = :role', { role });
+
+    // Apply filters
+    if (name) {
+      queryBuilder.andWhere('LOWER(user.name) LIKE LOWER(:name)', {
+        name: `%${name}%`,
+      });
+    }
+
+    if (registry) {
+      queryBuilder.andWhere('user.registry = :registry', { registry });
+    }
+
+    if (belt) {
+      queryBuilder.andWhere('user.belt = :belt', { belt });
+    }
+
+    if (isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', { isActive });
+    }
+
+    // Get total count before pagination
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination
+    queryBuilder.skip(skip).take(limit);
+
+    // Execute query
+    const data = await queryBuilder.getMany();
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getTeacher(teacherId: string): Promise<User> {

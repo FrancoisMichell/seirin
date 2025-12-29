@@ -78,58 +78,51 @@ export class AttendancesService {
   }
 
   async bulkCreate(sessionId: string) {
-    const session = await this.classSessionsService.findOne(sessionId);
+    return this.attendanceRepository.manager.transaction(async (manager) => {
+      const session = await this.classSessionsService.findOne(sessionId);
 
-    EntityUtil.ensureActive(
-      session,
-      'Cannot record attendance for an inactive class session',
-    );
-
-    const classEntity = await this.classService.findOne(session.class.id);
-
-    if (!classEntity.enrolledStudents.length) {
-      throw new BadRequestException(
-        'No students enrolled in the class to record attendance for',
+      EntityUtil.ensureActive(
+        session,
+        'Cannot record attendance for an inactive class session',
       );
-    }
 
-    const attendances: Attendance[] = [];
+      const classEntity = await this.classService.findOne(session.class.id);
 
-    for (const student of classEntity.enrolledStudents) {
-      const existingAttendance = await this.attendanceRepository.findOne({
-        where: {
-          session: { id: sessionId },
-          student: { id: student.id },
-        },
+      if (!classEntity.enrolledStudents.length) {
+        throw new BadRequestException(
+          'No students enrolled in the class to record attendance for',
+        );
+      }
+
+      const existingAttendances = await manager.find(Attendance, {
+        where: { session: { id: sessionId } },
+        relations: ['student'],
       });
 
-      if (!existingAttendance) {
-        const attendance = this.attendanceRepository.create({
+      const existingStudentIds = new Set(
+        existingAttendances.map((a) => a.student.id),
+      );
+
+      const newStudents = classEntity.enrolledStudents.filter(
+        (student) => !existingStudentIds.has(student.id),
+      );
+
+      if (newStudents.length === 0) {
+        return [];
+      }
+
+      const attendances = newStudents.map((student) =>
+        this.attendanceRepository.create({
           session,
           student,
           isEnrolledClass: true,
           status: AttendanceStatus.PENDING,
           checkedInAt: null,
-        });
-        attendances.push(attendance);
-      }
-    }
+        }),
+      );
 
-    if (attendances.length > 0) {
-      await this.attendanceRepository.insert(attendances);
-
-      // Buscar as entidades salvas com relações
-      return this.attendanceRepository.find({
-        where: {
-          session: { id: sessionId },
-        },
-        relations: ['session', 'student'],
-        order: { createdAt: 'DESC' },
-        take: attendances.length,
-      });
-    }
-
-    return [];
+      return manager.save(Attendance, attendances);
+    });
   }
 
   findAll(filters?: {
@@ -140,7 +133,10 @@ export class AttendancesService {
   }) {
     const query: {
       relations: string[];
-      where: Record<string, any>;
+      where: Record<
+        string,
+        string | boolean | { id: string } | Date | null | undefined
+      >;
     } = {
       relations: ['session', 'session.class', 'student'],
       where: {},

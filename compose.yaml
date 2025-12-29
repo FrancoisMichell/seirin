@@ -38,5 +38,18 @@ services:
     ports:
       - 8080:8080
 
+  postgres-test:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: seirin_test
+      POSTGRES_PASSWORD: seirin_test_password
+      POSTGRES_DB: seirin_test_db
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+
 volumes:
   pgdata:
+  pgdata-test:
