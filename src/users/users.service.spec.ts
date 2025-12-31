@@ -33,7 +33,7 @@ describe('UsersService', () => {
         name: 'John Doe',
         registry: '987654',
         password: 'password123',
-        belt: Belt.White,
+        belt: Belt.WHITE,
       };
       const roles = [UserRoleType.STUDENT];
 
@@ -82,7 +82,7 @@ describe('UsersService', () => {
         name: 'Jane Teacher',
         registry: '123456',
         password: 'pass456',
-        belt: Belt.Black,
+        belt: Belt.BLACK,
       };
       const roles = [UserRoleType.STUDENT, UserRoleType.TEACHER];
 
@@ -210,7 +210,7 @@ describe('UsersService', () => {
           id: '1',
           name: 'Student One',
           registry: '111',
-          belt: Belt.White,
+          belt: Belt.WHITE,
           isActive: true,
           roles: [{ role: UserRoleType.STUDENT }],
         } as User,
@@ -218,7 +218,7 @@ describe('UsersService', () => {
           id: '2',
           name: 'Student Two',
           registry: '222',
-          belt: Belt.Blue,
+          belt: Belt.BLUE,
           isActive: true,
           roles: [{ role: UserRoleType.STUDENT }],
         } as User,
@@ -355,7 +355,7 @@ describe('UsersService', () => {
         {
           id: '1',
           name: 'Student One',
-          belt: Belt.Blue,
+          belt: Belt.BLUE,
         } as User,
       ];
 
@@ -372,11 +372,11 @@ describe('UsersService', () => {
       usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
       await service.findByRole(UserRoleType.STUDENT, {
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
       });
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.belt = :belt', {
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
       });
     });
 
@@ -417,7 +417,7 @@ describe('UsersService', () => {
           id: '1',
           name: 'John Student',
           registry: '12345',
-          belt: Belt.Blue,
+          belt: Belt.BLUE,
           isActive: true,
         } as User,
       ];
@@ -437,7 +437,7 @@ describe('UsersService', () => {
       await service.findByRole(UserRoleType.STUDENT, {
         name: 'John',
         registry: '12345',
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
         isActive: true,
         page: 1,
         limit: 20,
@@ -452,7 +452,7 @@ describe('UsersService', () => {
         { registry: '12345' },
       );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.belt = :belt', {
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
       });
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'user.isActive = :isActive',
@@ -658,14 +658,14 @@ describe('UsersService', () => {
       const userId = '123';
       const updateData = {
         name: 'Updated Name',
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
       };
 
       const updatedUser = {
         id: userId,
         name: 'Updated Name',
         password: null,
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
         registry: '987654',
         birthday: null,
         trainingSince: null,
@@ -689,7 +689,7 @@ describe('UsersService', () => {
 
       expect(result).toBeDefined();
       expect(result?.name).toBe('Updated Name');
-      expect(result?.belt).toBe(Belt.Blue);
+      expect(result?.belt).toBe(Belt.BLUE);
       expect(usersRepository.update).toHaveBeenCalledWith(userId, updateData);
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { id: userId },

@@ -26,7 +26,7 @@ describe('StudentsService', () => {
 
   describe('create', () => {
     it('should create user with student role', async () => {
-      const dto = { name: 'John Doe', belt: Belt.White };
+      const dto = { name: 'John Doe', belt: Belt.WHITE };
       const userMock: User = {
         id: '1',
         roles: [studentRole],
@@ -46,7 +46,7 @@ describe('StudentsService', () => {
       const createStudentDto = {
         name: 'Jane Doe',
         registry: '2021002',
-        belt: Belt.Blue,
+        belt: Belt.BLUE,
         birthday: new Date('2000-01-01'),
         trainingSince: new Date('2020-01-01'),
       };
@@ -65,7 +65,7 @@ describe('StudentsService', () => {
     });
 
     it('should throw an error if creation fails', async () => {
-      const createStudentDto = { name: 'John Doe', belt: Belt.White };
+      const createStudentDto = { name: 'John Doe', belt: Belt.WHITE };
       usersService.create.mockRejectedValue(new Error('Creation failed'));
       await expect(service.create(createStudentDto)).rejects.toThrow(
         'Creation failed',
@@ -126,9 +126,9 @@ describe('StudentsService', () => {
       scenario                   | queryParams                           | expectedCallParams
       ${'with name filter'}      | ${{ name: 'John' }}                   | ${{ name: 'John' }}
       ${'with registry filter'}  | ${{ registry: '2021001' }}            | ${{ registry: '2021001' }}
-      ${'with belt filter'}      | ${{ belt: Belt.Blue }}                | ${{ belt: Belt.Blue }}
+      ${'with belt filter'}      | ${{ belt: Belt.BLUE }}                | ${{ belt: Belt.BLUE }}
       ${'with isActive filter'}  | ${{ isActive: true }}                 | ${{ isActive: true }}
-      ${'with multiple filters'} | ${{ name: 'Jane', belt: Belt.Green }} | ${{ name: 'Jane', belt: Belt.Green }}
+      ${'with multiple filters'} | ${{ name: 'Jane', belt: Belt.GREEN }} | ${{ name: 'Jane', belt: Belt.GREEN }}
     `(
       'should return students $scenario',
       async ({ queryParams, expectedCallParams }) => {

@@ -34,7 +34,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: Belt,
-    default: Belt.White,
+    default: Belt.WHITE,
   })
   belt: Belt;
 

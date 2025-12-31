@@ -147,12 +147,8 @@ describe('Teacher E2E Tests', () => {
       expect(loginData2).toHaveProperty('token');
       expect(loginData1.user).toBeDefined();
       expect(loginData2.user).toBeDefined();
-      expect((loginData1.user as User).registry).toBe(
-        (loginData2.user as User).registry,
-      );
-      expect((loginData1.user as User).name).toBe(
-        (loginData2.user as User).name,
-      );
+      expect(loginData1.user.registry).toBe(loginData2.user.registry);
+      expect(loginData1.user.name).toBe(loginData2.user.name);
     });
 
     it('should reject case-sensitive registry mismatch', async () => {
@@ -190,7 +186,7 @@ describe('Teacher E2E Tests', () => {
         .expect(200);
 
       const loginData = getBody<LoginResponse>(response);
-      const user = loginData.user as User;
+      const user = loginData.user;
       expect(user.roles).toBeDefined();
       expect(Array.isArray(user.roles)).toBe(true);
       expect(
