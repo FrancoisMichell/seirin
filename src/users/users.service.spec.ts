@@ -15,7 +15,7 @@ describe('UsersService', () => {
   let usersRepository: Mocked<Repository<User>>;
   let userRolesRepository: Mocked<Repository<UserRole>>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Initialize PasswordUtil with a mock ConfigService
     const mockConfigService = {
       get: jest.fn((key: string) => {

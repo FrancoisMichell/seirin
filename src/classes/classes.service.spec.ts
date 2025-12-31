@@ -7,6 +7,7 @@ import { TestBed } from '@suites/unit';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { UserRoleType, DayOfWeek } from 'src/common/enums';
+import { NotFoundException } from '@nestjs/common';
 
 describe('ClassesService', () => {
   let service: ClassesService;
@@ -75,6 +76,16 @@ describe('ClassesService', () => {
         teacher: mockTeacher,
       });
       expect(classesRepository.save).toHaveBeenCalledWith(mockClass);
+    });
+
+    it('should throw NotFoundException when teacher not found', async () => {
+      usersService.getTeacher.mockRejectedValue(
+        new NotFoundException('Teacher not found'),
+      );
+
+      await expect(service.create(createClassDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -256,6 +267,25 @@ describe('ClassesService', () => {
         name: partialUpdateDto.name,
         days: partialUpdateDto.days,
       });
+    });
+
+    it('should throw NotFoundException when class not found', async () => {
+      classesRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.update('class-uuid', { name: 'New Name' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate NotFoundException when teacher not found', async () => {
+      classesRepository.findOne.mockResolvedValue(mockClass);
+      usersService.getTeacher.mockRejectedValue(
+        new NotFoundException('Teacher not found'),
+      );
+
+      await expect(
+        service.update('class-uuid', { teacherId: 'invalid' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

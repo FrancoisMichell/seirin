@@ -1,3 +1,5 @@
+// src/attendances/attendances.controller.spec.ts
+
 import { AttendancesController } from './attendances.controller';
 import { AttendancesService } from './attendances.service';
 import { Mocked, TestBed } from '@suites/unit';
@@ -6,6 +8,8 @@ import { AttendanceStatus, DayOfWeek } from 'src/common/enums';
 import { ClassSession } from 'src/class-sessions/entities/class-session.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Class } from 'src/classes/entities/class.entity';
+import { PaginatedResponse } from 'src/common/interfaces';
+import { QueryAttendanceDto } from './dto/query-attendance.dto';
 
 describe('AttendancesController', () => {
   let controller: AttendancesController;
@@ -146,28 +150,44 @@ describe('AttendancesController', () => {
   });
 
   describe('findByStudent', () => {
-    it('should return attendances for a student', async () => {
-      const attendances = [mockAttendance];
-      service.findByStudent.mockResolvedValue(attendances);
+    it('should return paginated attendances for a student', async () => {
+      const paginatedResponse: PaginatedResponse<Attendance> = {
+        data: [mockAttendance],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      };
+      service.findByStudent.mockResolvedValue(paginatedResponse);
 
-      const result = await controller.findByStudent('student-uuid');
+      const query: QueryAttendanceDto = { page: 1, limit: 10 };
 
-      expect(service.findByStudent).toHaveBeenCalledWith(
-        'student-uuid',
-        undefined,
-        undefined,
-      );
-      expect(result).toEqual(attendances);
-    });
-
-    it('should return attendances with pagination', async () => {
-      const attendances = [mockAttendance];
-      service.findByStudent.mockResolvedValue(attendances);
-
-      const result = await controller.findByStudent('student-uuid', 1, 10);
+      const result = await controller.findByStudent('student-uuid', query);
 
       expect(service.findByStudent).toHaveBeenCalledWith('student-uuid', 1, 10);
-      expect(result).toEqual(attendances);
+      expect(result).toEqual(paginatedResponse);
+    });
+
+    it('should use default pagination values when not provided', async () => {
+      const paginatedResponse: PaginatedResponse<Attendance> = {
+        data: [mockAttendance],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      };
+      service.findByStudent.mockResolvedValue(paginatedResponse);
+
+      const query = new QueryAttendanceDto();
+
+      const result = await controller.findByStudent('student-uuid', query);
+
+      expect(service.findByStudent).toHaveBeenCalledWith('student-uuid', 1, 10);
+      expect(result).toEqual(paginatedResponse);
     });
   });
 

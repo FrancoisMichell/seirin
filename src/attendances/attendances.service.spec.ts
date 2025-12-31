@@ -343,21 +343,35 @@ describe('AttendancesService', () => {
   describe('findByStudent', () => {
     it('should return attendances for a student', async () => {
       usersService.getStudent.mockResolvedValue(mockStudent);
-      attendanceRepository.find.mockResolvedValue([mockAttendance]);
+      attendanceRepository.findAndCount.mockResolvedValue([
+        [mockAttendance],
+        1,
+      ]);
 
-      const result = await service.findByStudent('student-uuid');
+      const result = await service.findByStudent('student-uuid', 1, 10);
 
-      expect(result).toEqual([mockAttendance]);
+      expect(result).toEqual({
+        data: [mockAttendance],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      });
       expect(usersService.getStudent).toHaveBeenCalledWith('student-uuid');
     });
 
     it('should limit results when limit is provided', async () => {
       usersService.getStudent.mockResolvedValue(mockStudent);
-      attendanceRepository.find.mockResolvedValue([mockAttendance]);
+      attendanceRepository.findAndCount.mockResolvedValue([
+        [mockAttendance],
+        1,
+      ]);
 
-      await service.findByStudent('student-uuid', undefined, 10);
+      await service.findByStudent('student-uuid', 1, 10);
 
-      expect(attendanceRepository.find).toHaveBeenCalledWith(
+      expect(attendanceRepository.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 10,
         }),
