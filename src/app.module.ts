@@ -49,10 +49,14 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    ...(process.env.NODE_ENV !== 'test'
+      ? [
+          {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+          },
+        ]
+      : []),
   ],
 })
 export class AppModule implements OnModuleInit {
