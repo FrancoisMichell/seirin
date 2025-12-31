@@ -5,12 +5,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('attendances')
+@Index(['session'])
+@Index(['student'])
 export class Attendance {
   @PrimaryGeneratedColumn('uuid')
   id: string;
