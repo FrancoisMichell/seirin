@@ -3,25 +3,18 @@ import { TeachersService } from './teachers.service';
 import { UsersService } from 'src/users/users.service';
 import { Mocked } from '@suites/doubles.jest';
 import { User } from 'src/users/entities/user.entity';
-import { PasswordUtil } from 'src/common/utils/password.util';
-import { ConfigService } from '@nestjs/config';
+import { PasswordService } from 'src/common/utils/password.service';
 
 describe('TeacherService', () => {
   let service: TeachersService;
   let usersService: Mocked<UsersService>;
+  let passwordService: Mocked<PasswordService>;
 
   beforeAll(async () => {
-    const mockConfigService = {
-      get: jest.fn((key: string) => {
-        if (key === 'security.bcryptSaltRounds') {
-          return 10;
-        }
-      }),
-    } as unknown as ConfigService;
-    PasswordUtil.setConfigService(mockConfigService);
     const { unit, unitRef } = await TestBed.solitary(TeachersService).compile();
     service = unit;
     usersService = unitRef.get(UsersService);
+    passwordService = unitRef.get(PasswordService);
   });
 
   it('should be defined', () => {
@@ -51,7 +44,10 @@ describe('TeacherService', () => {
 
   describe('validateCredentials', () => {
     it('should return teacher data without password for valid credentials', async () => {
-      const hashedPassword = await PasswordUtil.hashPassword('teste123');
+      const hashedPassword = '$2b$10$mockedHash';
+      passwordService.hashPassword.mockResolvedValue(hashedPassword);
+      passwordService.compare.mockResolvedValue(true);
+
       const mockedTeacher = {
         id: '1',
         registry: '123321',
@@ -78,12 +74,15 @@ describe('TeacherService', () => {
     });
 
     it('should return null for invalid password', async () => {
+      const hashedPassword = '$2b$10$mockedHash';
       const mockedTeacher = {
         id: '1',
         registry: '123321',
-        password: 'teste123',
+        password: hashedPassword,
       } as User;
       usersService.findByRegistry.mockResolvedValue(mockedTeacher);
+      passwordService.compare.mockResolvedValue(false);
+
       const result = await service.validateCredentials(
         '123321',
         'wrongPassword',

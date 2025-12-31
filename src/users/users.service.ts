@@ -9,7 +9,7 @@ import { PostgresErrorCode } from '../common/constants/postgres-error-codes';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserRoleType } from 'src/common/enums';
-import { PasswordUtil } from 'src/common/utils/password.util';
+import { PasswordService } from 'src/common/utils/password.service';
 import { EntityUtil } from 'src/common/utils/entity.util';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { PaginatedResponse } from 'src/common/interfaces';
@@ -21,6 +21,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(UserRole)
     private userRolesRepository: Repository<UserRole>,
+    private passwordService: PasswordService,
   ) {}
 
   async create(
@@ -29,7 +30,9 @@ export class UsersService {
   ): Promise<User | null> {
     try {
       if (userData.password) {
-        userData.password = await PasswordUtil.hashPassword(userData.password);
+        userData.password = await this.passwordService.hashPassword(
+          userData.password,
+        );
       }
       const user = this.usersRepository.create({
         ...userData,
