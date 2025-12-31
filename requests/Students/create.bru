@@ -13,26 +13,8 @@ post {
 body:json {
   {
     "name": "Karate Student",
-    "email": "student@example.com",
-    "phone": "+55 11 98765-4321",
-    "belt": "white"
+    "belt": "White"
   }
-}
-
-docs {
-  Create a new student.
-  
-  Required fields:
-  - name: student's full name
-  
-  Optional fields:
-  - email: student's email
-  - phone: contact phone
-  - belt: current belt level
-  
-  Expected response:
-  - status: 201 Created
-  - body: { "id": "uuid", "name": "...", ... }
 }
 
 script:post-response {
@@ -84,4 +66,20 @@ tests {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+docs {
+  Create a new student.
+  
+  Required fields:
+  - name: student's full name
+  
+  Optional fields:
+  - email: student's email
+  - phone: contact phone
+  - belt: current belt level
+  
+  Expected response:
+  - status: 201 Created
+  - body: { "id": "uuid", "name": "...", ... }
 }

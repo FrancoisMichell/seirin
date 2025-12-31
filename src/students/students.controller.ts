@@ -1,18 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { QueryStudentsDto } from './dto/query-students.dto';
 import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from 'src/users/entities/user.entity';
+import { Roles } from 'src/common/decorators';
+import { UserRoleType } from 'src/common/enums';
 
 @ApiTags('students')
 @Controller('students')
+@Roles(UserRoleType.TEACHER)
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
@@ -26,14 +39,32 @@ export class StudentsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all students' })
+  @ApiOperation({ summary: 'Get all students with filters and pagination' })
+  @ApiQuery({ type: QueryStudentsDto })
   @ApiResponse({
     status: 200,
-    description: 'List of all students',
-    type: [User],
+    description: 'Paginated list of students',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/User' },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 10 },
+            total: { type: 'number', example: 42 },
+            totalPages: { type: 'number', example: 5 },
+          },
+        },
+      },
+    },
   })
-  findAll() {
-    return this.studentsService.findAll();
+  findAll(@Query() query: QueryStudentsDto) {
+    return this.studentsService.findAll(query);
   }
 
   @Get(':id')

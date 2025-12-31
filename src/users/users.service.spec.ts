@@ -7,29 +7,20 @@ import { Mocked } from '@suites/doubles.jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { PasswordUtil } from '../common/utils/password.util';
-import { ConfigService } from '@nestjs/config';
+import { PasswordService } from '../common/utils/password.service';
 
 describe('UsersService', () => {
   let service: UsersService;
   let usersRepository: Mocked<Repository<User>>;
   let userRolesRepository: Mocked<Repository<UserRole>>;
+  let passwordService: Mocked<PasswordService>;
 
-  beforeAll(async () => {
-    // Initialize PasswordUtil with a mock ConfigService
-    const mockConfigService = {
-      get: jest.fn((key: string) => {
-        if (key === 'security.bcryptSaltRounds') return 10;
-        return undefined;
-      }),
-    } as unknown as ConfigService;
-
-    PasswordUtil.setConfigService(mockConfigService);
-
+  beforeEach(async () => {
     const { unit, unitRef } = await TestBed.solitary(UsersService).compile();
     service = unit;
     usersRepository = unitRef.get(getRepositoryToken(User) as never);
     userRolesRepository = unitRef.get(getRepositoryToken(UserRole) as never);
+    passwordService = unitRef.get(PasswordService);
   });
 
   it('should be defined', () => {
@@ -67,18 +58,9 @@ describe('UsersService', () => {
       } as User;
 
       usersRepository.create.mockReturnValue(createdUser);
-      usersRepository.insert.mockResolvedValue({
-        identifiers: [{ id: '123' }],
-        generatedMaps: [],
-        raw: [],
-      });
       userRolesRepository.create.mockReturnValue(userRole);
-      userRolesRepository.insert.mockResolvedValue({
-        identifiers: [{ id: 'role-1' }],
-        generatedMaps: [],
-        raw: [],
-      });
-      usersRepository.findOne.mockResolvedValue(savedUser);
+      usersRepository.save.mockResolvedValue(savedUser);
+      passwordService.hashPassword.mockResolvedValue('$2b$10$hashedPassword');
 
       const result = await service.create(userData, roles);
 
@@ -92,8 +74,7 @@ describe('UsersService', () => {
       expect(createCall.password).not.toBe('password123');
       expect(createCall.password).toBeDefined();
 
-      expect(usersRepository.insert).toHaveBeenCalled();
-      expect(userRolesRepository.insert).toHaveBeenCalled();
+      expect(usersRepository.save).toHaveBeenCalled();
     });
 
     it('should create a user with multiple roles', async () => {
@@ -128,20 +109,10 @@ describe('UsersService', () => {
       } as User;
 
       usersRepository.create.mockReturnValue(createdUser);
-      usersRepository.insert.mockResolvedValue({
-        identifiers: [{ id: '456' }],
-        generatedMaps: [],
-        raw: [],
-      });
       userRolesRepository.create
         .mockReturnValueOnce(studentRole)
         .mockReturnValueOnce(teacherRole);
-      userRolesRepository.insert.mockResolvedValue({
-        identifiers: [{ id: 'role-1' }, { id: 'role-2' }],
-        generatedMaps: [],
-        raw: [],
-      });
-      usersRepository.findOne.mockResolvedValue(savedUser);
+      usersRepository.save.mockResolvedValue(savedUser);
 
       const result = await service.create(userData, roles);
 
@@ -233,77 +204,332 @@ describe('UsersService', () => {
   });
 
   describe('findByRole', () => {
-    it('should return users filtered by student role', async () => {
-      const students = [
+    it('should return paginated users filtered by role with default pagination', async () => {
+      const users = [
         {
           id: '1',
           name: 'Student One',
           registry: '111',
+          belt: Belt.White,
+          isActive: true,
+          roles: [{ role: UserRoleType.STUDENT }],
         } as User,
         {
           id: '2',
           name: 'Student Two',
           registry: '222',
+          belt: Belt.Blue,
+          isActive: true,
+          roles: [{ role: UserRoleType.STUDENT }],
         } as User,
       ];
 
       const queryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(students),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(2),
+        getMany: jest.fn().mockResolvedValue(users),
       } as unknown as SelectQueryBuilder<User>;
 
       usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
-      const result = await service.findByRole(UserRoleType.STUDENT);
+      const result = await service.findByRole(UserRoleType.STUDENT, {});
 
-      expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('Student One');
-      expect(result[1].name).toBe('Student Two');
-      expect(queryBuilder.innerJoin).toHaveBeenCalledWith('user.roles', 'role');
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.page).toBe(1);
+      expect(result.meta.limit).toBe(10);
+      expect(result.meta.total).toBe(2);
+      expect(result.meta.totalPages).toBe(1);
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'user.roles',
+        'role',
+      );
       expect(queryBuilder.where).toHaveBeenCalledWith('role.role = :role', {
         role: UserRoleType.STUDENT,
       });
+      expect(queryBuilder.skip).toHaveBeenCalledWith(0);
+      expect(queryBuilder.take).toHaveBeenCalledWith(10);
     });
 
-    it('should return users filtered by teacher role', async () => {
-      const teachers = [
+    it('should apply pagination correctly', async () => {
+      const users = [
         {
-          id: '3',
-          name: 'Teacher One',
-          registry: '333',
+          id: '11',
+          name: 'Student Eleven',
+          registry: '1111',
         } as User,
       ];
 
       const queryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(teachers),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(25),
+        getMany: jest.fn().mockResolvedValue(users),
       } as unknown as SelectQueryBuilder<User>;
 
       usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
-      const result = await service.findByRole(UserRoleType.TEACHER);
+      const result = await service.findByRole(UserRoleType.STUDENT, {
+        page: 3,
+        limit: 5,
+      });
 
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe('Teacher One');
-      expect(queryBuilder.where).toHaveBeenCalledWith('role.role = :role', {
-        role: UserRoleType.TEACHER,
+      expect(result.meta.page).toBe(3);
+      expect(result.meta.limit).toBe(5);
+      expect(result.meta.total).toBe(25);
+      expect(result.meta.totalPages).toBe(5);
+      expect(queryBuilder.skip).toHaveBeenCalledWith(10); // (3-1) * 5
+      expect(queryBuilder.take).toHaveBeenCalledWith(5);
+    });
+
+    it('should filter by name', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'John Student',
+          registry: '111',
+        } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(1),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        name: 'John',
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'LOWER(user.name) LIKE LOWER(:name)',
+        { name: '%John%' },
+      );
+    });
+
+    it('should filter by registry', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'Student One',
+          registry: '12345',
+        } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(1),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        registry: '12345',
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.registry = :registry',
+        { registry: '12345' },
+      );
+    });
+
+    it('should filter by belt', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'Student One',
+          belt: Belt.Blue,
+        } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(1),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        belt: Belt.Blue,
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.belt = :belt', {
+        belt: Belt.Blue,
       });
     });
 
-    it('should return empty array when no users have the role', async () => {
+    it('should filter by isActive status', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'Active Student',
+          isActive: true,
+        } as User,
+      ];
+
       const queryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(1),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        isActive: true,
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.isActive = :isActive',
+        { isActive: true },
+      );
+    });
+
+    it('should apply multiple filters at once', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'John Student',
+          registry: '12345',
+          belt: Belt.Blue,
+          isActive: true,
+        } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(1),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        name: 'John',
+        registry: '12345',
+        belt: Belt.Blue,
+        isActive: true,
+        page: 1,
+        limit: 20,
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'LOWER(user.name) LIKE LOWER(:name)',
+        { name: '%John%' },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.registry = :registry',
+        { registry: '12345' },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.belt = :belt', {
+        belt: Belt.Blue,
+      });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.isActive = :isActive',
+        { isActive: true },
+      );
+    });
+
+    it('should return empty data when no users match filters', async () => {
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(0),
         getMany: jest.fn().mockResolvedValue([]),
       } as unknown as SelectQueryBuilder<User>;
 
       usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
-      const result = await service.findByRole(UserRoleType.TEACHER);
+      const result = await service.findByRole(UserRoleType.STUDENT, {
+        name: 'NonExistent',
+      });
 
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
+      expect(result.meta.total).toBe(0);
+      expect(result.meta.totalPages).toBe(0);
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(23),
+        getMany: jest.fn().mockResolvedValue([]),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      const result = await service.findByRole(UserRoleType.STUDENT, {
+        limit: 10,
+      });
+
+      expect(result.meta.totalPages).toBe(3); // Math.ceil(23 / 10) = 3
+    });
+
+    it('should work with teacher role', async () => {
+      const teachers = [
+        {
+          id: '1',
+          name: 'Teacher One',
+          registry: '999',
+          roles: [{ role: UserRoleType.TEACHER }],
+        } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(1),
+        getMany: jest.fn().mockResolvedValue(teachers),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      const result = await service.findByRole(UserRoleType.TEACHER, {});
+
+      expect(result.data).toHaveLength(1);
+      expect(queryBuilder.where).toHaveBeenCalledWith('role.role = :role', {
+        role: UserRoleType.TEACHER,
+      });
     });
   });
 

@@ -21,6 +21,7 @@ describe('JwtStrategy', () => {
       const payload = {
         sub: '550e8400-e29b-41d4-a716-446655440000',
         username: '123321',
+        roles: [],
       };
 
       const result = strategy.validate(payload);
@@ -34,11 +35,13 @@ describe('JwtStrategy', () => {
       const payload1 = {
         sub: 'user-id-1',
         username: 'user1',
+        roles: [],
       };
 
       const payload2 = {
         sub: 'user-id-2',
         username: 'user2',
+        roles: [],
       };
 
       const result1 = strategy.validate(payload1);
@@ -54,6 +57,7 @@ describe('JwtStrategy', () => {
       const payload = {
         sub: '12345',
         username: 'testuser',
+        roles: [],
       };
 
       const result = strategy.validate(payload);
@@ -65,6 +69,7 @@ describe('JwtStrategy', () => {
       const payload = {
         sub: '12345',
         username: '987654',
+        roles: [],
       };
 
       const result = strategy.validate(payload);

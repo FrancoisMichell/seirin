@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { QueryStudentsDto } from './dto/query-students.dto';
 import { UsersService } from 'src/users/users.service';
 import { UserRoleType } from 'src/common/enums';
+import { PaginatedResponse } from 'src/common/interfaces';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class StudentsService {
@@ -12,8 +15,8 @@ export class StudentsService {
     return this.usersService.create(createStudentDto, [UserRoleType.STUDENT]);
   }
 
-  async findAll() {
-    return await this.usersService.findByRole(UserRoleType.STUDENT);
+  async findAll(query: QueryStudentsDto): Promise<PaginatedResponse<User>> {
+    return this.usersService.findByRole(UserRoleType.STUDENT, query);
   }
 
   async findOne(id: string) {

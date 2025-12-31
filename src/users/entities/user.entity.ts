@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   OneToMany,
   ManyToMany,
+  Index,
 } from 'typeorm';
 import { UserRole } from './user-role.entity';
 import { Exclude } from 'class-transformer';
@@ -15,6 +16,7 @@ import { ClassSession } from '../../class-sessions/entities/class-session.entity
 import { Attendance } from '../../attendances/entities/attendance.entity';
 
 @Entity('users')
+@Index(['isActive'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

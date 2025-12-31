@@ -1,12 +1,17 @@
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import * as path from 'path';
 
-config();
+// Load appropriate .env file based on NODE_ENV
+const isTest = process.env.NODE_ENV === 'test';
+if (isTest) {
+  config({ path: path.resolve(__dirname, '../.env.test'), override: true });
+} else {
+  config();
+}
 
 const configService = new ConfigService();
-
-const isTest = process.env.NODE_ENV === 'test';
 
 export const datasourceOptions: DataSourceOptions = {
   // @ts-expect-error // TypeORM expects predefined strings for type

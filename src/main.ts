@@ -1,11 +1,14 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { setupApp } from './common/setup-app';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Apply common application configuration (pipes, interceptors, etc.)
+  setupApp(app);
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Seirin - Student Management API')
@@ -17,26 +20,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-
-      disableErrorMessages: process.env.NODE_ENV === 'production',
-      validationError: {
-        target: false,
-        value: false,
-      },
-
-      stopAtFirstError: false,
-    }),
-  );
   app.use(helmet());
   app.enableCors();
   await app.listen(process.env.PORT ?? 3000);

@@ -343,21 +343,35 @@ describe('AttendancesService', () => {
   describe('findByStudent', () => {
     it('should return attendances for a student', async () => {
       usersService.getStudent.mockResolvedValue(mockStudent);
-      attendanceRepository.find.mockResolvedValue([mockAttendance]);
+      attendanceRepository.findAndCount.mockResolvedValue([
+        [mockAttendance],
+        1,
+      ]);
 
-      const result = await service.findByStudent('student-uuid');
+      const result = await service.findByStudent('student-uuid', 1, 10);
 
-      expect(result).toEqual([mockAttendance]);
+      expect(result).toEqual({
+        data: [mockAttendance],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      });
       expect(usersService.getStudent).toHaveBeenCalledWith('student-uuid');
     });
 
     it('should limit results when limit is provided', async () => {
       usersService.getStudent.mockResolvedValue(mockStudent);
-      attendanceRepository.find.mockResolvedValue([mockAttendance]);
+      attendanceRepository.findAndCount.mockResolvedValue([
+        [mockAttendance],
+        1,
+      ]);
 
-      await service.findByStudent('student-uuid', undefined, 10);
+      await service.findByStudent('student-uuid', 1, 10);
 
-      expect(attendanceRepository.find).toHaveBeenCalledWith(
+      expect(attendanceRepository.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 10,
         }),
@@ -489,28 +503,59 @@ describe('AttendancesService', () => {
   });
 
   describe('bulkCreate', () => {
+    let mockManager: {
+      find: jest.Mock;
+      save: jest.Mock;
+    };
+
+    beforeEach(() => {
+      mockManager = {
+        find: jest.fn(),
+        save: jest.fn(),
+      };
+      Object.defineProperty(attendanceRepository, 'manager', {
+        value: {
+          transaction: jest.fn(
+            (
+              callback: (manager: typeof mockManager) => Promise<Attendance[]>,
+            ) => callback(mockManager),
+          ),
+        },
+        writable: true,
+        configurable: true,
+      });
+    });
+
     it('should create attendance records for all enrolled students', async () => {
       classSessionsService.findOne.mockResolvedValue(mockClassSession);
       classService.findOne.mockResolvedValue(mockClass);
-      attendanceRepository.findOne.mockResolvedValue(null);
-      attendanceRepository.create.mockReturnValue(mockAttendance);
-      attendanceRepository.insert.mockResolvedValue({
-        identifiers: [],
-        generatedMaps: [],
-        raw: [],
-      });
-      attendanceRepository.find.mockResolvedValue([mockAttendance]);
+      mockManager.find.mockResolvedValue([]);
+      attendanceRepository.create.mockImplementation(
+        (data) => data as Attendance,
+      );
+      mockManager.save.mockResolvedValue([mockAttendance, mockAttendance]);
 
       const result = await service.bulkCreate('session-uuid');
 
       expect(result).toBeDefined();
-      expect(attendanceRepository.insert).toHaveBeenCalled();
-      expect(attendanceRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { session: { id: 'session-uuid' } },
-          relations: ['session', 'student'],
-        }),
+      expect(result).toHaveLength(2);
+      expect(attendanceRepository.manager.transaction).toHaveBeenCalled();
+      expect(mockManager.find).toHaveBeenCalledWith(Attendance, {
+        where: { session: { id: 'session-uuid' } },
+        relations: ['student'],
+      });
+      expect(mockManager.save).toHaveBeenCalledWith(
+        Attendance,
+        expect.arrayContaining([
+          expect.objectContaining({
+            status: AttendanceStatus.PENDING,
+            isEnrolledClass: true,
+          }),
+        ]),
       );
+      // Verificar que o segundo argumento é um array com 2 elementos
+      const saveCall = mockManager.save.mock.calls[0] as unknown[];
+      expect(saveCall[1] as Attendance[]).toHaveLength(2);
     });
 
     it('should throw error if session is inactive', async () => {
@@ -520,6 +565,7 @@ describe('AttendancesService', () => {
       await expect(service.bulkCreate('session-uuid')).rejects.toThrow(
         'Cannot record attendance for an inactive class session',
       );
+      expect(attendanceRepository.manager.transaction).toHaveBeenCalled();
     });
 
     it('should throw error if no students enrolled', async () => {
@@ -533,30 +579,56 @@ describe('AttendancesService', () => {
     });
 
     it('should not create duplicate attendance records', async () => {
+      const existingAttendances = [
+        { ...mockAttendance, student: mockStudent },
+        { ...mockAttendance, student: mockStudent2 },
+      ];
+
       classSessionsService.findOne.mockResolvedValue(mockClassSession);
       classService.findOne.mockResolvedValue(mockClass);
-      attendanceRepository.findOne.mockResolvedValue(mockAttendance);
+      mockManager.find.mockResolvedValue(existingAttendances);
 
       const result = await service.bulkCreate('session-uuid');
 
       expect(result).toEqual([]);
-      expect(attendanceRepository.insert).not.toHaveBeenCalled();
+      expect(mockManager.save).not.toHaveBeenCalled();
     });
 
-    it('should create attendances with PENDING status', async () => {
+    it('should only create attendances for new students', async () => {
+      const existingAttendances = [
+        { ...mockAttendance, student: mockStudent }, // Já existe
+      ];
+
       classSessionsService.findOne.mockResolvedValue(mockClassSession);
       classService.findOne.mockResolvedValue(mockClass);
-      attendanceRepository.findOne.mockResolvedValue(null);
-      attendanceRepository.create.mockReturnValue({
-        ...mockAttendance,
+      mockManager.find.mockResolvedValue(existingAttendances);
+      attendanceRepository.create.mockImplementation(
+        (data) => data as Attendance,
+      );
+      mockManager.save.mockResolvedValue([mockAttendance]);
+
+      const result = await service.bulkCreate('session-uuid');
+
+      expect(result).toHaveLength(1);
+      // Verificar que save foi chamado com o array correto
+      const saveCall = mockManager.save.mock.calls[0] as unknown[];
+      expect(saveCall[0]).toBe(Attendance);
+      expect(saveCall[1] as Attendance[]).toHaveLength(1);
+      expect((saveCall[1] as Attendance[])[0]).toMatchObject({
+        student: mockStudent2,
+        isEnrolledClass: true,
         status: AttendanceStatus.PENDING,
       });
-      attendanceRepository.insert.mockResolvedValue({
-        identifiers: [],
-        generatedMaps: [],
-        raw: [],
-      });
-      attendanceRepository.find.mockResolvedValue([mockAttendance]);
+    });
+
+    it('should create attendances with PENDING status and null checkedInAt', async () => {
+      classSessionsService.findOne.mockResolvedValue(mockClassSession);
+      classService.findOne.mockResolvedValue(mockClass);
+      mockManager.find.mockResolvedValue([]);
+      attendanceRepository.create.mockImplementation(
+        (data) => data as Attendance,
+      );
+      mockManager.save.mockResolvedValue([mockAttendance]);
 
       await service.bulkCreate('session-uuid');
 
