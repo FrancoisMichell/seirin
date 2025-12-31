@@ -41,7 +41,7 @@ describe('StudentsController', () => {
     it('should create a student', async () => {
       const createStudentDto: CreateStudentDto = {
         name: 'John Doe',
-        belt: Belt.White,
+        belt: Belt.WHITE,
       };
       const createdStudent = {
         id: '550e8400-e29b-41d4-a716-446655440000',

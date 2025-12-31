@@ -25,7 +25,7 @@ export class CreateStudentDto {
 
   @ApiProperty({
     description: 'Belt level of the student',
-    example: Belt.White,
+    example: Belt.WHITE,
   })
   @IsEnum(Belt)
   belt: Belt;

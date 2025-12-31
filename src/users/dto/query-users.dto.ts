@@ -45,7 +45,7 @@ export class QueryUsersDto {
   @ApiPropertyOptional({
     description: 'Filter by belt level',
     enum: Belt,
-    example: Belt.White,
+    example: Belt.WHITE,
   })
   @IsOptional()
   @IsEnum(Belt)

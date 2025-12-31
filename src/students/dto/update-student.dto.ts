@@ -15,7 +15,7 @@ export class UpdateStudentDto extends PartialType(CreateStudentDto) {
 
   @ApiProperty({
     description: 'Belt level of the student',
-    example: Belt.White,
+    example: Belt.WHITE,
     required: false,
   })
   @IsOptional()

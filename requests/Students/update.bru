@@ -13,8 +13,8 @@ patch {
 body:json {
   {
     "name": "Updated Student Name",
-    "email": "updated@example.com",
-    "belt": "yellow"
+    "belt": "yellow",
+    "registry": "2025001"
   }
 }
 
@@ -26,9 +26,12 @@ docs {
   
   Optional fields:
   - name: new name
-  - email: new email
-  - phone: new phone
-  - belt: new belt level
+  - registry: student registry number
+  - belt: new belt level (white, yellow, orange, green, blue, brown, black)
+  - birthday: birthday date
+  - trainingSince: training start date
+  - password: new password
+  - isActive: active status
   
   Expected response:
   - status: 200 OK

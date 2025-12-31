@@ -1,11 +1,11 @@
 export enum Belt {
-  White = 'White',
-  Yellow = 'Yellow',
-  Orange = 'Orange',
-  Green = 'Green',
-  Blue = 'Blue',
-  Brown = 'Brown',
-  Black = 'Black',
+  WHITE = 'white',
+  YELLOW = 'yellow',
+  ORANGE = 'orange',
+  GREEN = 'green',
+  BLUE = 'blue',
+  BROWN = 'brown',
+  BLACK = 'black',
 }
 
 export enum UserRoleType {

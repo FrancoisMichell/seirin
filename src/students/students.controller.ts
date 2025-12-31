@@ -18,12 +18,14 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { User } from 'src/users/entities/user.entity';
 import { Roles } from 'src/common/decorators';
 import { UserRoleType } from 'src/common/enums';
 
 @ApiTags('students')
+@ApiBearerAuth('JWT-auth')
 @Controller('students')
 @Roles(UserRoleType.TEACHER)
 export class StudentsController {

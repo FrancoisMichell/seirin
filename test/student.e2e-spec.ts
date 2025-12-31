@@ -50,7 +50,7 @@ describe('Student e2e tests', () => {
     it('should create a new student with minimal data', async () => {
       const studentData = {
         name: 'John Doe',
-        belt: 'Blue',
+        belt: 'blue',
       };
 
       const response = await request(app.getHttpServer() as App)
@@ -78,7 +78,7 @@ describe('Student e2e tests', () => {
       const studentData = {
         name: 'Jane Smith',
         registry: '987655',
-        belt: 'White',
+        belt: 'white',
         birthday: '2005-05-15',
         trainingSince: '2020-01-10',
       };
@@ -107,7 +107,7 @@ describe('Student e2e tests', () => {
     it('should return 401 if no auth token is provided', async () => {
       const response = await request(app.getHttpServer() as App)
         .post('/students')
-        .send({ name: 'John Doe', registry: '123456', belt: 'White' })
+        .send({ name: 'John Doe', registry: '123456', belt: 'white' })
         .expect(401);
 
       const body = getBody<{ message: string }>(response);
@@ -121,7 +121,7 @@ describe('Student e2e tests', () => {
         {
           name: 'Student User',
           registry: '555555',
-          belt: Belt.Yellow,
+          belt: Belt.YELLOW,
           password: 'studentpass',
         },
         [UserRoleType.STUDENT],
@@ -141,7 +141,7 @@ describe('Student e2e tests', () => {
         .send({
           name: 'Unauthorized Student',
           registry: '666666',
-          belt: 'White',
+          belt: 'white',
         })
         .expect(403);
 
@@ -152,11 +152,11 @@ describe('Student e2e tests', () => {
 
     it.each`
       scenario                          | studentData                                                | expectedMessage
-      ${'empty name'}                   | ${{ name: '', belt: 'White' }}                             | ${'name should not be empty'}
-      ${'invalid belt enum'}            | ${{ name: 'Test', belt: 'Purple' }}                        | ${'belt must be one of the following values: White, Yellow, Orange, Green, Blue, Brown, Black'}
-      ${'invalid birthday format'}      | ${{ name: 'Test', belt: 'White', birthday: '2000-13-45' }} | ${'birthday must be a Date instance'}
-      ${'invalid trainingSince format'} | ${{ name: 'Test', belt: 'White', trainingSince: 'abcd' }}  | ${'trainingSince must be a Date instance'}
-      ${'unknown field present'}        | ${{ name: 'Test', belt: 'White', unknownField: 'x' }}      | ${'property unknownField should not exist'}
+      ${'empty name'}                   | ${{ name: '', belt: 'white' }}                             | ${'name should not be empty'}
+      ${'invalid belt enum'}            | ${{ name: 'Test', belt: 'Purple' }}                        | ${'belt must be one of the following values: white, yellow, orange, green, blue, brown, black'}
+      ${'invalid birthday format'}      | ${{ name: 'Test', belt: 'white', birthday: '2000-13-45' }} | ${'birthday must be a Date instance'}
+      ${'invalid trainingSince format'} | ${{ name: 'Test', belt: 'white', trainingSince: 'abcd' }}  | ${'trainingSince must be a Date instance'}
+      ${'unknown field present'}        | ${{ name: 'Test', belt: 'white', unknownField: 'x' }}      | ${'property unknownField should not exist'}
     `(
       'should return 400 for $scenario',
       async ({ studentData, expectedMessage }) => {
@@ -177,7 +177,7 @@ describe('Student e2e tests', () => {
     //   const studentData = {
     //     name: 'Duplicate Registry',
     //     registry: duplicateRegistry,
-    //     belt: 'Green',
+    //     belt: 'green',
     //   };
 
     //   const response = await request(app.getHttpServer() as App)
@@ -352,7 +352,7 @@ describe('Student e2e tests', () => {
       expect(body.message).toContain('page must not be less than 1');
       expect(body.message).toContain('limit must not be less than 1');
       expect(body.message).toContain(
-        'belt must be one of the following values: White, Yellow, Orange, Green, Blue, Brown, Black',
+        'belt must be one of the following values: white, yellow, orange, green, blue, brown, black',
       );
     });
 
@@ -468,7 +468,7 @@ describe('Student e2e tests', () => {
       const specialStudent = await usersService.create(
         {
           name: "Anne-Marie O'Connor",
-          belt: Belt.Green,
+          belt: Belt.GREEN,
         },
         [UserRoleType.STUDENT],
       );

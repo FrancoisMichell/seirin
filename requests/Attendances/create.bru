@@ -5,13 +5,13 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/attendances
+  url: {{host}}/attendances
   body: json
   auth: bearer
+}
 
 auth:bearer {
   token: {{SeirinAuthToken}}
-}
 }
 
 body:json {
