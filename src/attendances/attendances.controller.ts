@@ -8,7 +8,6 @@ import {
   Delete,
   Query,
   ParseUUIDPipe,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
@@ -16,6 +15,7 @@ import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { AttendanceStatus } from 'src/common/enums';
 import { Roles } from 'src/common/decorators';
 import { UserRoleType } from 'src/common/enums';
+import { QueryAttendanceDto } from './dto/query-attendance.dto';
 
 @Controller('attendances')
 @Roles(UserRoleType.TEACHER)
@@ -56,10 +56,13 @@ export class AttendancesController {
   @Get('student/:studentId')
   findByStudent(
     @Param('studentId', ParseUUIDPipe) studentId: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query() query: QueryAttendanceDto,
   ) {
-    return this.attendancesService.findByStudent(studentId, page, limit);
+    return this.attendancesService.findByStudent(
+      studentId,
+      query.page,
+      query.limit,
+    );
   }
 
   @Get(':id')
