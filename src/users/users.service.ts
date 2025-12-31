@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRole } from './entities/user-role.entity';
 import { Repository } from 'typeorm';
+import { PostgresErrorCode } from '../common/constants/postgres-error-codes';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserRoleType } from 'src/common/enums';
@@ -26,15 +27,25 @@ export class UsersService {
     userData: Partial<User>,
     roles: UserRoleType[],
   ): Promise<User | null> {
-    if (userData.password) {
-      userData.password = await PasswordUtil.hashPassword(userData.password);
-    }
-    const user = this.usersRepository.create({
-      ...userData,
-      roles: roles.map((role) => this.userRolesRepository.create({ role })),
-    });
+    try {
+      if (userData.password) {
+        userData.password = await PasswordUtil.hashPassword(userData.password);
+      }
+      const user = this.usersRepository.create({
+        ...userData,
+        roles: roles.map((role) => this.userRolesRepository.create({ role })),
+      });
 
-    return this.usersRepository.save(user);
+      return this.usersRepository.save(user);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error?.code === PostgresErrorCode.UNIQUE_VIOLATION) {
+        throw new BadRequestException(
+          'User with given registry already exists',
+        );
+      }
+      throw new BadRequestException('Failed to create user');
+    }
   }
 
   async findById(id: string): Promise<User | null> {
