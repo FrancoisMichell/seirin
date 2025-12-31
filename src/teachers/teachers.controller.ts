@@ -13,6 +13,7 @@ import { Public, Roles } from 'src/common/decorators';
 import { TeachersService } from 'src/teachers/teachers.service';
 import { AuthenticatedRequestDto } from './dto/authenticated-request.dto';
 import { UserRoleType } from 'src/common/enums';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 
 @Controller('teacher')
 @Roles(UserRoleType.TEACHER)
@@ -23,6 +24,7 @@ export class TeachersController {
   ) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -31,6 +33,7 @@ export class TeachersController {
   }
 
   @Get('me')
+  @SkipThrottle()
   getProfile(@Request() req: AuthenticatedRequestDto) {
     return this.teacherService.findByRegistry(req.user.registry!);
   }
