@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { PasswordUtil } from './password.util';
+import { PasswordService } from './password.service';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
 
-describe('PasswordUtil', () => {
+describe('PasswordService', () => {
+  let service: PasswordService;
   let mockConfigService: jest.Mocked<ConfigService>;
 
   beforeEach(() => {
@@ -14,7 +15,7 @@ describe('PasswordUtil', () => {
       get: jest.fn(),
     } as any;
 
-    PasswordUtil.setConfigService(mockConfigService);
+    service = new PasswordService(mockConfigService);
     jest.clearAllMocks();
   });
 
@@ -26,7 +27,7 @@ describe('PasswordUtil', () => {
       mockConfigService.get.mockReturnValue(undefined);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
 
-      const result = await PasswordUtil.hashPassword(password);
+      const result = await service.hashPassword(password);
 
       expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
       expect(result).toBe(hashedPassword);
@@ -40,7 +41,7 @@ describe('PasswordUtil', () => {
       mockConfigService.get.mockReturnValue(customSaltRounds);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
 
-      const result = await PasswordUtil.hashPassword(password);
+      const result = await service.hashPassword(password);
 
       expect(mockConfigService.get).toHaveBeenCalledWith(
         'security.bcryptSaltRounds',
@@ -60,8 +61,8 @@ describe('PasswordUtil', () => {
         .mockResolvedValueOnce(hash1)
         .mockResolvedValueOnce(hash2);
 
-      const result1 = await PasswordUtil.hashPassword(password);
-      const result2 = await PasswordUtil.hashPassword(password);
+      const result1 = await service.hashPassword(password);
+      const result2 = await service.hashPassword(password);
 
       expect(result1).toBe(hash1);
       expect(result2).toBe(hash2);
@@ -75,7 +76,7 @@ describe('PasswordUtil', () => {
       mockConfigService.get.mockReturnValue(undefined);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
 
-      const result = await PasswordUtil.hashPassword(password);
+      const result = await service.hashPassword(password);
 
       expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
       expect(result).toBe(hashedPassword);
@@ -89,7 +90,7 @@ describe('PasswordUtil', () => {
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await PasswordUtil.compare(password, hash);
+      const result = await service.compare(password, hash);
 
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hash);
       expect(result).toBe(true);
@@ -101,7 +102,7 @@ describe('PasswordUtil', () => {
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      const result = await PasswordUtil.compare(password, hash);
+      const result = await service.compare(password, hash);
 
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hash);
       expect(result).toBe(false);
@@ -113,7 +114,7 @@ describe('PasswordUtil', () => {
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      const result = await PasswordUtil.compare(password, hash);
+      const result = await service.compare(password, hash);
 
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hash);
       expect(result).toBe(false);
@@ -125,7 +126,7 @@ describe('PasswordUtil', () => {
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await PasswordUtil.compare(password, hash);
+      const result = await service.compare(password, hash);
 
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hash);
       expect(result).toBe(true);

@@ -7,29 +7,20 @@ import { Mocked } from '@suites/doubles.jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { PasswordUtil } from '../common/utils/password.util';
-import { ConfigService } from '@nestjs/config';
+import { PasswordService } from '../common/utils/password.service';
 
 describe('UsersService', () => {
   let service: UsersService;
   let usersRepository: Mocked<Repository<User>>;
   let userRolesRepository: Mocked<Repository<UserRole>>;
+  let passwordService: Mocked<PasswordService>;
 
   beforeEach(async () => {
-    // Initialize PasswordUtil with a mock ConfigService
-    const mockConfigService = {
-      get: jest.fn((key: string) => {
-        if (key === 'security.bcryptSaltRounds') return 10;
-        return undefined;
-      }),
-    } as unknown as ConfigService;
-
-    PasswordUtil.setConfigService(mockConfigService);
-
     const { unit, unitRef } = await TestBed.solitary(UsersService).compile();
     service = unit;
     usersRepository = unitRef.get(getRepositoryToken(User) as never);
     userRolesRepository = unitRef.get(getRepositoryToken(UserRole) as never);
+    passwordService = unitRef.get(PasswordService);
   });
 
   it('should be defined', () => {
@@ -69,6 +60,7 @@ describe('UsersService', () => {
       usersRepository.create.mockReturnValue(createdUser);
       userRolesRepository.create.mockReturnValue(userRole);
       usersRepository.save.mockResolvedValue(savedUser);
+      passwordService.hashPassword.mockResolvedValue('$2b$10$hashedPassword');
 
       const result = await service.create(userData, roles);
 

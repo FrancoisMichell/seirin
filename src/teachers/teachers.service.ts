@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { PasswordUtil } from 'src/common/utils/password.util';
+import { PasswordService } from 'src/common/utils/password.service';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class TeachersService {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private passwordService: PasswordService,
+  ) {}
 
   findByRegistry(registry: string) {
     return this.usersService.findByRegistry(registry);
@@ -20,7 +23,7 @@ export class TeachersService {
       return null;
     }
 
-    const isPasswordValid = await PasswordUtil.compare(
+    const isPasswordValid = await this.passwordService.compare(
       password,
       teacher.password,
     );
