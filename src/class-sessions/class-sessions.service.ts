@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateClassSessionDto } from './dto/create-class-session.dto';
+import { PostgresErrorCode } from 'src/common/constants/postgres-error-codes';
 import { UpdateClassSessionDto } from './dto/update-class-session.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -28,39 +29,59 @@ export class ClassSessionsService {
   ) {}
 
   async create(createClassSessionDto: CreateClassSessionDto) {
-    const classEntity = await this.classesService.findOne(
-      createClassSessionDto.classId,
-    );
-
-    EntityUtil.ensureActive(
-      classEntity,
-      'Cannot create session for an inactive class',
-    );
-
-    const teacher = await this.usersService.getTeacher(
-      createClassSessionDto.teacherId,
-    );
-
-    const existingSession = await this.sessionsRepository.findOne({
-      where: {
-        date: createClassSessionDto.date,
-        class: { id: createClassSessionDto.classId },
-      },
-    });
-
-    if (existingSession) {
-      throw new BadRequestException(
-        'A session for this class on the specified date already exists',
+    try {
+      const classEntity = await this.classesService.findOne(
+        createClassSessionDto.classId,
       );
+
+      EntityUtil.ensureActive(
+        classEntity,
+        'Cannot create session for an inactive class',
+      );
+
+      const teacher = await this.usersService.getTeacher(
+        createClassSessionDto.teacherId,
+      );
+
+      const existingSession = await this.sessionsRepository.findOne({
+        where: {
+          date: createClassSessionDto.date,
+          class: { id: createClassSessionDto.classId },
+        },
+      });
+
+      if (existingSession) {
+        throw new BadRequestException(
+          'A session for this class on the specified date already exists',
+        );
+      }
+
+      const session = this.sessionsRepository.create({
+        ...createClassSessionDto,
+        teacher,
+        class: classEntity,
+      });
+
+      return this.sessionsRepository.save(session);
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error?.code === PostgresErrorCode.UNIQUE_VIOLATION) {
+        throw new BadRequestException(
+          'A session with this information already exists',
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error?.code === PostgresErrorCode.FOREIGN_KEY_VIOLATION) {
+        throw new BadRequestException('Invalid class or teacher reference');
+      }
+      throw new BadRequestException('Failed to create class session');
     }
-
-    const session = this.sessionsRepository.create({
-      ...createClassSessionDto,
-      teacher,
-      class: classEntity,
-    });
-
-    return this.sessionsRepository.save(session);
   }
 
   async findAll(filters?: {
@@ -172,33 +193,53 @@ export class ClassSessionsService {
   }
 
   async update(id: string, updateClassSessionDto: UpdateClassSessionDto) {
-    const session = await this.findOne(id);
+    try {
+      const session = await this.findOne(id);
 
-    if (updateClassSessionDto.teacherId) {
-      const teacher = await this.usersService.getTeacher(
-        updateClassSessionDto.teacherId,
-      );
-      session.teacher = teacher;
+      if (updateClassSessionDto.teacherId) {
+        const teacher = await this.usersService.getTeacher(
+          updateClassSessionDto.teacherId,
+        );
+        session.teacher = teacher;
+      }
+
+      if (updateClassSessionDto.classId) {
+        const classEntity = await this.classesService.findOne(
+          updateClassSessionDto.classId,
+        );
+
+        EntityUtil.ensureActive(
+          classEntity,
+          'Cannot assign session to an inactive class',
+        );
+        session.class = classEntity;
+      }
+
+      EntityUtil.updateFields(session, updateClassSessionDto, [
+        'teacherId',
+        'classId',
+      ]);
+
+      return this.sessionsRepository.save(session);
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error?.code === PostgresErrorCode.UNIQUE_VIOLATION) {
+        throw new BadRequestException(
+          'A session with this information already exists',
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error?.code === PostgresErrorCode.FOREIGN_KEY_VIOLATION) {
+        throw new BadRequestException('Invalid class or teacher reference');
+      }
+      throw new BadRequestException('Failed to update class session');
     }
-
-    if (updateClassSessionDto.classId) {
-      const classEntity = await this.classesService.findOne(
-        updateClassSessionDto.classId,
-      );
-
-      EntityUtil.ensureActive(
-        classEntity,
-        'Cannot assign session to an inactive class',
-      );
-      session.class = classEntity;
-    }
-
-    EntityUtil.updateFields(session, updateClassSessionDto, [
-      'teacherId',
-      'classId',
-    ]);
-
-    return this.sessionsRepository.save(session);
   }
 
   async activate(id: string) {
