@@ -123,6 +123,7 @@ describe('Student e2e tests', () => {
           registry: '555555',
           belt: Belt.YELLOW,
           password: 'studentpass',
+          instructor: { id: teacher.id } as User,
         },
         [UserRoleType.STUDENT],
       );
@@ -292,6 +293,23 @@ describe('Student e2e tests', () => {
       expect(body.data[0].id).toEqual(targetStudent.id);
     });
 
+    it('should get students filtered by multiple belts', async () => {
+      const response = await request(app.getHttpServer() as App)
+        .get('/students')
+        .set('Authorization', `Bearer ${authToken}`)
+        .query({ belt: ['blue', 'yellow'] })
+        .expect(200);
+
+      const body = getBody<PaginatedResponse<User>>(response);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('meta');
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBeGreaterThan(0);
+      body.data.forEach((student) => {
+        expect(['blue', 'yellow']).toContain(student.belt);
+      });
+    });
+
     it('should get students filtered by isActive status', async () => {
       const response = await request(app.getHttpServer() as App)
         .get('/students')
@@ -306,6 +324,53 @@ describe('Student e2e tests', () => {
       expect(body.meta).toHaveProperty('totalPages', 1);
       expect(Array.isArray(body.data)).toBe(true);
       expect(body.data.length).toEqual(students.length);
+    });
+
+    it('should only return students from the authenticated teacher', async () => {
+      // Create another teacher
+      await usersService.create(
+        {
+          name: 'Another Teacher',
+          registry: 'teacher2',
+          password: 'password123',
+        },
+        [UserRoleType.TEACHER],
+      );
+
+      // Login as the second teacher
+      const login = await request(app.getHttpServer() as App)
+        .post('/teacher/login')
+        .send({ username: 'teacher2', password: 'password123' })
+        .expect(200);
+
+      const loginData = getBody<LoginResponse>(login);
+      const anotherTeacherToken = loginData.token;
+
+      // Create a student for the second teacher
+      await request(app.getHttpServer() as App)
+        .post('/students')
+        .set('Authorization', `Bearer ${anotherTeacherToken}`)
+        .send({ name: 'Student of Teacher 2', belt: 'white' })
+        .expect(201);
+
+      // First teacher should only see their students
+      const response1 = await request(app.getHttpServer() as App)
+        .get('/students')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      const body1 = getBody<PaginatedResponse<User>>(response1);
+      expect(body1.data.length).toEqual(students.length);
+
+      // Second teacher should only see their student(s)
+      const response2 = await request(app.getHttpServer() as App)
+        .get('/students')
+        .set('Authorization', `Bearer ${anotherTeacherToken}`)
+        .expect(200);
+
+      const body2 = getBody<PaginatedResponse<User>>(response2);
+      expect(body2.data.length).toEqual(1);
+      expect(body2.data[0].name).toBe('Student of Teacher 2');
     });
 
     it('should return 401 if no auth token is provided', async () => {
@@ -352,7 +417,7 @@ describe('Student e2e tests', () => {
       expect(body.message).toContain('page must not be less than 1');
       expect(body.message).toContain('limit must not be less than 1');
       expect(body.message).toContain(
-        'belt must be one of the following values: white, yellow, orange, green, blue, brown, black',
+        'each value in belt must be one of the following values: white, yellow, orange, green, blue, brown, black',
       );
     });
 
@@ -469,6 +534,7 @@ describe('Student e2e tests', () => {
         {
           name: "Anne-Marie O'Connor",
           belt: Belt.GREEN,
+          instructor: { id: teacher.id } as User,
         },
         [UserRoleType.STUDENT],
       );

@@ -13,18 +13,7 @@ get {
 params:query {
   ~page: 1
   ~limit: 10
-}
-
-docs {
-  Get all students with pagination.
-  
-  Optional query parameters:
-  - page: page number (default: 1)
-  - limit: items per page (default: 10)
-  
-  Expected response:
-  - status: 200 OK
-  - body: [{ "id": "uuid", "name": "...", ... }, ...]
+  ~isActive: false
 }
 
 script:post-response {
@@ -67,4 +56,16 @@ tests {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+docs {
+  Get all students with pagination.
+  
+  Optional query parameters:
+  - page: page number (default: 1)
+  - limit: items per page (default: 10)
+  
+  Expected response:
+  - status: 200 OK
+  - body: [{ "id": "uuid", "name": "...", ... }, ...]
 }
