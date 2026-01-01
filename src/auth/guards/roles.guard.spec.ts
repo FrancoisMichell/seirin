@@ -69,7 +69,7 @@ describe('RolesGuard', () => {
       .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({
-      user: { userId: '123', roles: [] },
+      user: { id: '123', roles: [] },
     });
 
     expect(guard.canActivate(context)).toBe(false);
@@ -82,7 +82,7 @@ describe('RolesGuard', () => {
       .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({
-      user: { userId: '123', roles: [UserRoleType.TEACHER] },
+      user: { id: '123', roles: [UserRoleType.TEACHER] },
     });
 
     expect(guard.canActivate(context)).toBe(true);
@@ -95,7 +95,7 @@ describe('RolesGuard', () => {
       .mockReturnValueOnce([UserRoleType.TEACHER, UserRoleType.STUDENT]); // requiredRoles
 
     const context = createMockExecutionContext({
-      user: { userId: '123', roles: [UserRoleType.STUDENT] },
+      user: { id: '123', roles: [UserRoleType.STUDENT] },
     });
 
     expect(guard.canActivate(context)).toBe(true);
@@ -108,7 +108,7 @@ describe('RolesGuard', () => {
       .mockReturnValueOnce([UserRoleType.TEACHER]); // requiredRoles
 
     const context = createMockExecutionContext({
-      user: { userId: '123', roles: [UserRoleType.STUDENT] },
+      user: { id: '123', roles: [UserRoleType.STUDENT] },
     });
 
     expect(guard.canActivate(context)).toBe(false);

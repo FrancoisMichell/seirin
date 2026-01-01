@@ -7,6 +7,8 @@ import {
   UpdateDateColumn,
   OneToMany,
   ManyToMany,
+  ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { UserRole } from './user-role.entity';
@@ -17,6 +19,7 @@ import { Attendance } from '../../attendances/entities/attendance.entity';
 
 @Entity('users')
 @Index(['isActive'])
+@Index(['instructor'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -70,6 +73,15 @@ export class User {
 
   @OneToMany(() => UserRole, (role) => role.user, { cascade: true })
   roles: UserRole[];
+
+  // For students: their instructor/teacher
+  @ManyToOne(() => User, (user) => user.students, { nullable: true })
+  @JoinColumn({ name: 'instructor_id' })
+  instructor: User | null;
+
+  // For teachers: their students
+  @OneToMany(() => User, (user) => user.instructor)
+  students: User[];
 
   @OneToMany(() => Class, (classEntity) => classEntity.teacher)
   classes: Class[];

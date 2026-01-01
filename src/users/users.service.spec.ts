@@ -228,6 +228,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(2),
@@ -250,6 +251,10 @@ describe('UsersService', () => {
       expect(queryBuilder.where).toHaveBeenCalledWith('role.role = :role', {
         role: UserRoleType.STUDENT,
       });
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+        'user.createdAt',
+        'DESC',
+      );
       expect(queryBuilder.skip).toHaveBeenCalledWith(0);
       expect(queryBuilder.take).toHaveBeenCalledWith(10);
     });
@@ -267,6 +272,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(25),
@@ -301,6 +307,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(1),
@@ -332,6 +339,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(1),
@@ -345,8 +353,8 @@ describe('UsersService', () => {
       });
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.registry = :registry',
-        { registry: '12345' },
+        'lower(user.registry) LIKE lower(:registry)',
+        { registry: '%12345%' },
       );
     });
 
@@ -363,6 +371,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(1),
@@ -372,12 +381,19 @@ describe('UsersService', () => {
       usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
       await service.findByRole(UserRoleType.STUDENT, {
-        belt: Belt.BLUE,
+        belt: [Belt.BLUE],
       });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.belt = :belt', {
-        belt: Belt.BLUE,
-      });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.belt IN (:...belt)',
+        {
+          belt: [Belt.BLUE],
+        },
+      );
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+        'user.createdAt',
+        'DESC',
+      );
     });
 
     it('should filter by isActive status', async () => {
@@ -393,6 +409,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(1),
@@ -402,12 +419,12 @@ describe('UsersService', () => {
       usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
       await service.findByRole(UserRoleType.STUDENT, {
-        isActive: true,
+        isActive: 'true',
       });
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'user.isActive = :isActive',
-        { isActive: true },
+        { isActive: 'true' },
       );
     });
 
@@ -426,6 +443,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(1),
@@ -437,8 +455,8 @@ describe('UsersService', () => {
       await service.findByRole(UserRoleType.STUDENT, {
         name: 'John',
         registry: '12345',
-        belt: Belt.BLUE,
-        isActive: true,
+        belt: [Belt.BLUE],
+        isActive: 'true',
         page: 1,
         limit: 20,
       });
@@ -448,15 +466,18 @@ describe('UsersService', () => {
         { name: '%John%' },
       );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.registry = :registry',
-        { registry: '12345' },
+        'lower(user.registry) LIKE lower(:registry)',
+        { registry: '%12345%' },
       );
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.belt = :belt', {
-        belt: Belt.BLUE,
-      });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.belt IN (:...belt)',
+        {
+          belt: [Belt.BLUE],
+        },
+      );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'user.isActive = :isActive',
-        { isActive: true },
+        { isActive: 'true' },
       );
     });
 
@@ -465,6 +486,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(0),
@@ -487,6 +509,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(23),
@@ -516,6 +539,7 @@ describe('UsersService', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         getCount: jest.fn().mockResolvedValue(1),
@@ -530,6 +554,98 @@ describe('UsersService', () => {
       expect(queryBuilder.where).toHaveBeenCalledWith('role.role = :role', {
         role: UserRoleType.TEACHER,
       });
+    });
+
+    it('should apply custom sorting', async () => {
+      const users = [
+        { id: '1', name: 'Alice' } as User,
+        { id: '2', name: 'Bob' } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(2),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        sortBy: 'name',
+        sortOrder: 'ASC',
+      });
+
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith('user.name', 'ASC');
+    });
+
+    it('should filter by multiple belts', async () => {
+      const users = [
+        { id: '1', belt: Belt.WHITE } as User,
+        { id: '2', belt: Belt.YELLOW } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(2),
+        getMany: jest.fn().mockResolvedValue(users),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {
+        belt: [Belt.WHITE, Belt.YELLOW],
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.belt IN (:...belt)',
+        { belt: [Belt.WHITE, Belt.YELLOW] },
+      );
+    });
+
+    it('should filter by instructorId when provided', async () => {
+      const instructorId = 'instructor-123';
+      const students = [
+        {
+          id: '1',
+          name: 'Student 1',
+          instructor: { id: instructorId },
+        } as User,
+        {
+          id: '2',
+          name: 'Student 2',
+          instructor: { id: instructorId },
+        } as User,
+      ];
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(2),
+        getMany: jest.fn().mockResolvedValue(students),
+      } as unknown as SelectQueryBuilder<User>;
+
+      usersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      await service.findByRole(UserRoleType.STUDENT, {}, instructorId);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.instructor_id = :instructorId',
+        { instructorId },
+      );
     });
   });
 

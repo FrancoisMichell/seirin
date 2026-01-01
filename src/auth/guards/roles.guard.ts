@@ -3,14 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from 'src/common/decorators';
 import { UserRoleType } from 'src/common/enums';
 import { IS_PUBLIC_KEY } from 'src/common/decorators';
-
-interface RequestWithUser {
-  user?: {
-    userId: string;
-    register: string;
-    roles: UserRoleType[];
-  };
-}
+import { RequestWithUser } from 'src/common/interfaces';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

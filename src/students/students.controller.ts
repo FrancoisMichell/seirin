@@ -21,7 +21,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { User } from 'src/users/entities/user.entity';
-import { Roles } from 'src/common/decorators';
+import { CurrentUser, Roles } from 'src/common/decorators';
 import { UserRoleType } from 'src/common/enums';
 
 @ApiTags('students')
@@ -36,8 +36,11 @@ export class StudentsController {
   @ApiBody({ type: CreateStudentDto })
   @ApiResponse({ status: 201, description: 'The student has been created.' })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createStudentDto: CreateStudentDto) {
-    return this.studentsService.create(createStudentDto);
+  create(
+    @Body() createStudentDto: CreateStudentDto,
+    @CurrentUser() teacher: User,
+  ) {
+    return this.studentsService.create(createStudentDto, teacher.id);
   }
 
   @Get()
@@ -65,8 +68,8 @@ export class StudentsController {
       },
     },
   })
-  findAll(@Query() query: QueryStudentsDto) {
-    return this.studentsService.findAll(query);
+  findAll(@Query() query: QueryStudentsDto, @CurrentUser() teacher: User) {
+    return this.studentsService.findAll(query, teacher.id);
   }
 
   @Get(':id')

@@ -4,6 +4,7 @@ import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { Belt } from '../common/enums';
+import { User } from 'src/users/entities/user.entity';
 
 describe('StudentsController', () => {
   let controller: StudentsController;
@@ -38,6 +39,8 @@ describe('StudentsController', () => {
   });
 
   describe('create', () => {
+    const teacher = { id: 'instructor-123' } as User;
+
     it('should create a student', async () => {
       const createStudentDto: CreateStudentDto = {
         name: 'John Doe',
@@ -47,20 +50,26 @@ describe('StudentsController', () => {
         id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'John Doe',
         isActive: true,
+        instructor: { id: teacher.id },
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       mockStudentsService.create.mockResolvedValue(createdStudent);
 
-      const result = await controller.create(createStudentDto);
+      const result = await controller.create(createStudentDto, teacher);
 
-      expect(mockStudentsService.create).toHaveBeenCalledWith(createStudentDto);
+      expect(mockStudentsService.create).toHaveBeenCalledWith(
+        createStudentDto,
+        teacher.id,
+      );
       expect(result).toEqual(createdStudent);
     });
   });
 
   describe('findAll', () => {
+    const teacher = { id: 'instructor-123' } as User;
+
     it('should return an array of students', async () => {
       const students = [
         {
@@ -81,9 +90,9 @@ describe('StudentsController', () => {
 
       mockStudentsService.findAll.mockResolvedValue(students);
 
-      const result = await controller.findAll({});
+      const result = await controller.findAll({}, teacher);
 
-      expect(mockStudentsService.findAll).toHaveBeenCalled();
+      expect(mockStudentsService.findAll).toHaveBeenCalledWith({}, teacher.id);
       expect(result).toEqual(students);
       expect(result).toHaveLength(2);
     });

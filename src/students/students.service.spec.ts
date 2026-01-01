@@ -25,20 +25,24 @@ describe('StudentsService', () => {
   });
 
   describe('create', () => {
-    it('should create user with student role', async () => {
+    const instructorId = 'instructor-123';
+
+    it('should create user with student role and instructor', async () => {
       const dto = { name: 'John Doe', belt: Belt.WHITE };
       const userMock: User = {
         id: '1',
         roles: [studentRole],
+        instructor: { id: instructorId } as User,
         ...dto,
       } as User;
 
       usersService.create.mockResolvedValue(userMock);
 
-      const result = await service.create(dto);
-      expect(usersService.create).toHaveBeenCalledWith(dto, [
-        UserRoleType.STUDENT,
-      ]);
+      const result = await service.create(dto, instructorId);
+      expect(usersService.create).toHaveBeenCalledWith(
+        { ...dto, instructor: { id: instructorId } },
+        [UserRoleType.STUDENT],
+      );
       expect(result).toEqual(userMock);
     });
 
@@ -54,26 +58,30 @@ describe('StudentsService', () => {
         id: '2',
         ...createStudentDto,
         roles: [studentRole],
+        instructor: { id: instructorId } as User,
       } as User;
       usersService.create.mockResolvedValue(createdStudent);
 
-      const result = await service.create(createStudentDto);
-      expect(usersService.create).toHaveBeenCalledWith(createStudentDto, [
-        UserRoleType.STUDENT,
-      ]);
+      const result = await service.create(createStudentDto, instructorId);
+      expect(usersService.create).toHaveBeenCalledWith(
+        { ...createStudentDto, instructor: { id: instructorId } },
+        [UserRoleType.STUDENT],
+      );
       expect(result).toEqual(createdStudent);
     });
 
     it('should throw an error if creation fails', async () => {
       const createStudentDto = { name: 'John Doe', belt: Belt.WHITE };
       usersService.create.mockRejectedValue(new Error('Creation failed'));
-      await expect(service.create(createStudentDto)).rejects.toThrow(
-        'Creation failed',
-      );
+      await expect(
+        service.create(createStudentDto, instructorId),
+      ).rejects.toThrow('Creation failed');
     });
   });
 
   describe('findAll', () => {
+    const instructorId = 'instructor-123';
+
     it('should return an array of students without filters', async () => {
       const emptyQuery: QueryStudentsDto = {};
       const students = [
@@ -92,10 +100,11 @@ describe('StudentsService', () => {
 
       usersService.findByRole.mockResolvedValue(paginatedStudents);
 
-      const result = await service.findAll(emptyQuery);
+      const result = await service.findAll(emptyQuery, instructorId);
       expect(usersService.findByRole).toHaveBeenCalledWith(
         UserRoleType.STUDENT,
         {},
+        instructorId,
       );
       expect(result).toStrictEqual(paginatedStudents);
     });
@@ -114,21 +123,22 @@ describe('StudentsService', () => {
 
       usersService.findByRole.mockResolvedValue(paginatedStudents);
 
-      const result = await service.findAll(emptyQuery);
+      const result = await service.findAll(emptyQuery, instructorId);
       expect(usersService.findByRole).toHaveBeenCalledWith(
         UserRoleType.STUDENT,
         {},
+        instructorId,
       );
       expect(result).toStrictEqual(paginatedStudents);
     });
 
     it.each`
-      scenario                   | queryParams                           | expectedCallParams
-      ${'with name filter'}      | ${{ name: 'John' }}                   | ${{ name: 'John' }}
-      ${'with registry filter'}  | ${{ registry: '2021001' }}            | ${{ registry: '2021001' }}
-      ${'with belt filter'}      | ${{ belt: Belt.BLUE }}                | ${{ belt: Belt.BLUE }}
-      ${'with isActive filter'}  | ${{ isActive: true }}                 | ${{ isActive: true }}
-      ${'with multiple filters'} | ${{ name: 'Jane', belt: Belt.GREEN }} | ${{ name: 'Jane', belt: Belt.GREEN }}
+      scenario                   | queryParams                             | expectedCallParams
+      ${'with name filter'}      | ${{ name: 'John' }}                     | ${{ name: 'John' }}
+      ${'with registry filter'}  | ${{ registry: '2021001' }}              | ${{ registry: '2021001' }}
+      ${'with belt filter'}      | ${{ belt: [Belt.BLUE] }}                | ${{ belt: [Belt.BLUE] }}
+      ${'with isActive filter'}  | ${{ isActive: true }}                   | ${{ isActive: true }}
+      ${'with multiple filters'} | ${{ name: 'Jane', belt: [Belt.GREEN] }} | ${{ name: 'Jane', belt: [Belt.GREEN] }}
     `(
       'should return students $scenario',
       async ({ queryParams, expectedCallParams }) => {
@@ -147,10 +157,14 @@ describe('StudentsService', () => {
 
         usersService.findByRole.mockResolvedValue(paginatedStudents);
 
-        const result = await service.findAll(queryParams as QueryStudentsDto);
+        const result = await service.findAll(
+          queryParams as QueryStudentsDto,
+          instructorId,
+        );
         expect(usersService.findByRole).toHaveBeenCalledWith(
           UserRoleType.STUDENT,
           expectedCallParams,
+          instructorId,
         );
         expect(result).toStrictEqual(paginatedStudents);
       },
@@ -160,7 +174,7 @@ describe('StudentsService', () => {
       const emptyQuery: QueryStudentsDto = {};
 
       usersService.findByRole.mockRejectedValue(new Error('Retrieval failed'));
-      await expect(service.findAll(emptyQuery)).rejects.toThrow(
+      await expect(service.findAll(emptyQuery, instructorId)).rejects.toThrow(
         'Retrieval failed',
       );
     });

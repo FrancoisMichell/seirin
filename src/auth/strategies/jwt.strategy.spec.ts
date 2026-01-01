@@ -27,8 +27,8 @@ describe('JwtStrategy', () => {
       const result = strategy.validate(payload);
 
       expect(result).toBeDefined();
-      expect(result.userId).toBe(payload.sub);
-      expect(result.register).toBe(payload.username);
+      expect(result.id).toBe(payload.sub);
+      expect(result.registry).toBe(payload.username);
     });
 
     it('should handle payload with different user ids', () => {
@@ -47,13 +47,13 @@ describe('JwtStrategy', () => {
       const result1 = strategy.validate(payload1);
       const result2 = strategy.validate(payload2);
 
-      expect(result1.userId).toBe('user-id-1');
-      expect(result1.register).toBe('user1');
-      expect(result2.userId).toBe('user-id-2');
-      expect(result2.register).toBe('user2');
+      expect(result1.id).toBe('user-id-1');
+      expect(result1.registry).toBe('user1');
+      expect(result2.id).toBe('user-id-2');
+      expect(result2.registry).toBe('user2');
     });
 
-    it('should extract userId from sub field', () => {
+    it('should extract id from sub field', () => {
       const payload = {
         sub: '12345',
         username: 'testuser',
@@ -62,10 +62,10 @@ describe('JwtStrategy', () => {
 
       const result = strategy.validate(payload);
 
-      expect(result.userId).toBe('12345');
+      expect(result.id).toBe('12345');
     });
 
-    it('should extract register from username field', () => {
+    it('should extract registry from username field', () => {
       const payload = {
         sub: '12345',
         username: '987654',
@@ -74,7 +74,7 @@ describe('JwtStrategy', () => {
 
       const result = strategy.validate(payload);
 
-      expect(result.register).toBe('987654');
+      expect(result.registry).toBe('987654');
     });
   });
 });
