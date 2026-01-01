@@ -68,14 +68,31 @@ export class UsersService {
   async findByRole(
     role: UserRoleType,
     query: QueryUsersDto,
+    instructorId?: string,
   ): Promise<PaginatedResponse<User>> {
-    const { page = 1, limit = 10, name, registry, belt, isActive } = query;
+    const {
+      page = 1,
+      limit = 10,
+      name,
+      registry,
+      belt,
+      isActive,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = query;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.roles', 'role')
       .where('role.role = :role', { role });
+
+    // Filter by instructor if provided (for students)
+    if (instructorId) {
+      queryBuilder.andWhere('user.instructor_id = :instructorId', {
+        instructorId,
+      });
+    }
 
     // Apply filters
     if (name) {
@@ -85,16 +102,21 @@ export class UsersService {
     }
 
     if (registry) {
-      queryBuilder.andWhere('user.registry = :registry', { registry });
+      queryBuilder.andWhere('lower(user.registry) LIKE lower(:registry)', {
+        registry: `%${registry}%`,
+      });
     }
 
-    if (belt) {
-      queryBuilder.andWhere('user.belt = :belt', { belt });
+    if (belt && belt.length > 0) {
+      queryBuilder.andWhere('user.belt IN (:...belt)', { belt });
     }
 
     if (isActive !== undefined) {
       queryBuilder.andWhere('user.isActive = :isActive', { isActive });
     }
+
+    // Apply sorting
+    queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
 
     // Get total count before pagination
     const total = await queryBuilder.getCount();
