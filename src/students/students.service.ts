@@ -11,12 +11,22 @@ import { User } from 'src/users/entities/user.entity';
 export class StudentsService {
   constructor(private usersService: UsersService) {}
 
-  async create(createStudentDto: CreateStudentDto) {
-    return this.usersService.create(createStudentDto, [UserRoleType.STUDENT]);
+  async create(createStudentDto: CreateStudentDto, instructorId: string) {
+    return this.usersService.create(
+      { ...createStudentDto, instructor: { id: instructorId } as User },
+      [UserRoleType.STUDENT],
+    );
   }
 
-  async findAll(query: QueryStudentsDto): Promise<PaginatedResponse<User>> {
-    return this.usersService.findByRole(UserRoleType.STUDENT, query);
+  async findAll(
+    query: QueryStudentsDto,
+    instructorId: string,
+  ): Promise<PaginatedResponse<User>> {
+    return this.usersService.findByRole(
+      UserRoleType.STUDENT,
+      query,
+      instructorId,
+    );
   }
 
   async findOne(id: string) {
