@@ -67,7 +67,7 @@ export class ClassSessionsController {
   ) {
     return this.classSessionsService.findByClass(
       classId,
-      query.includeInactive,
+      query.includeInactive as unknown as boolean,
     );
   }
 
@@ -82,7 +82,7 @@ export class ClassSessionsController {
   ) {
     return this.classSessionsService.findByTeacher(
       teacherId,
-      query.includeInactive,
+      query.includeInactive as unknown as boolean,
     );
   }
 
@@ -93,7 +93,7 @@ export class ClassSessionsController {
     return this.classSessionsService.findByDateRange(
       query.startDate,
       query.endDate,
-      query.includeInactive,
+      query.includeInactive as unknown as boolean,
     );
   }
 

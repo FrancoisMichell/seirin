@@ -64,7 +64,7 @@ describe('ClassSessionsController', () => {
   describe('findByClass', () => {
     it('should call service.findByClass with correct parameters', async () => {
       const classId = 'class-uuid';
-      const includeInactive = true;
+      const includeInactive = 'true';
       const mockSession = {
         id: 'session-uuid',
         date: new Date('2024-10-10T10:00:00Z'),
@@ -90,7 +90,7 @@ describe('ClassSessionsController', () => {
   describe('findByTeacher', () => {
     it('should call service.findByTeacher with correct parameters', async () => {
       const teacherId = 'teacher-uuid';
-      const includeInactive = false;
+      const includeInactive = 'false';
       const mockSession = {
         id: 'session-uuid',
         date: new Date('2024-10-10T10:00:00Z'),
@@ -117,7 +117,7 @@ describe('ClassSessionsController', () => {
     it('should call service.findByDateRange with correct parameters', async () => {
       const startDate = new Date('2024-10-01T00:00:00Z');
       const endDate = new Date('2024-10-31T23:59:59Z');
-      const includeInactive = true;
+      const includeInactive = 'true';
       const mockSession = {
         id: 'session-uuid',
         date: new Date('2024-10-10T10:00:00Z'),

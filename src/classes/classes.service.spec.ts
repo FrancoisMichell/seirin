@@ -55,7 +55,6 @@ describe('ClassesService', () => {
 
   describe('create', () => {
     const createClassDto = {
-      teacherId: 'teacher-uuid',
       name: 'Iniciantes - segunda e quarta',
       days: [1, 3],
       startTime: '10:00',
@@ -67,7 +66,7 @@ describe('ClassesService', () => {
       classesRepository.create.mockReturnValue(mockClass);
       classesRepository.save.mockResolvedValue(mockClass);
 
-      const result = await service.create(createClassDto);
+      const result = await service.create(createClassDto, 'teacher-uuid');
 
       expect(result).toEqual(mockClass);
       expect(usersService.getTeacher).toHaveBeenCalledWith('teacher-uuid');
@@ -83,46 +82,157 @@ describe('ClassesService', () => {
         new NotFoundException('Teacher not found'),
       );
 
-      await expect(service.create(createClassDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create(createClassDto, 'teacher-uuid'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('findAll', () => {
-    it('should return all active classes by default', async () => {
-      classesRepository.find.mockResolvedValue([mockClass]);
+    it('should return paginated active classes by default', async () => {
+      classesRepository.findAndCount.mockResolvedValue([[mockClass], 1]);
 
       const result = await service.findAll();
 
-      expect(result).toEqual([mockClass]);
-      expect(classesRepository.find).toHaveBeenCalledWith({
+      expect(result).toEqual({
+        data: [mockClass],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      });
+      expect(classesRepository.findAndCount).toHaveBeenCalledWith({
         where: { isActive: true },
         relations: ['teacher', 'enrolledStudents'],
+        skip: 0,
+        take: 10,
+        order: { createdAt: 'DESC' },
       });
     });
 
-    it('should return all classes including inactive ones', async () => {
+    it('should return paginated classes including inactive ones', async () => {
       const inactiveClass = { ...mockClass, isActive: false };
-      classesRepository.find.mockResolvedValue([mockClass, inactiveClass]);
+      classesRepository.findAndCount.mockResolvedValue([
+        [mockClass, inactiveClass],
+        2,
+      ]);
 
-      const result = await service.findAll(true);
+      const result = await service.findAll(1, 10, true);
 
-      expect(result).toEqual([mockClass, inactiveClass]);
-      expect(classesRepository.find).toHaveBeenCalledWith({
+      expect(result).toEqual({
+        data: [mockClass, inactiveClass],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 2,
+          totalPages: 1,
+        },
+      });
+      expect(classesRepository.findAndCount).toHaveBeenCalledWith({
+        where: undefined,
         relations: ['teacher', 'enrolledStudents'],
+        skip: 0,
+        take: 10,
+        order: { createdAt: 'DESC' },
       });
     });
 
-    it('should return an empty array if no classes found', async () => {
-      classesRepository.find.mockResolvedValue([]);
+    it('should return an empty paginated array if no classes found', async () => {
+      classesRepository.findAndCount.mockResolvedValue([[], 0]);
 
       const result = await service.findAll();
 
-      expect(result).toEqual([]);
-      expect(classesRepository.find).toHaveBeenCalledWith({
+      expect(result).toEqual({
+        data: [],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      });
+      expect(classesRepository.findAndCount).toHaveBeenCalledWith({
         where: { isActive: true },
         relations: ['teacher', 'enrolledStudents'],
+        skip: 0,
+        take: 10,
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should handle pagination correctly', async () => {
+      const mockClasses = [mockClass, mockClass, mockClass];
+      classesRepository.findAndCount.mockResolvedValue([mockClasses, 25]);
+
+      const result = await service.findAll(3, 10);
+
+      expect(result).toEqual({
+        data: mockClasses,
+        meta: {
+          page: 3,
+          limit: 10,
+          total: 25,
+          totalPages: 3,
+        },
+      });
+      expect(classesRepository.findAndCount).toHaveBeenCalledWith({
+        where: { isActive: true },
+        relations: ['teacher', 'enrolledStudents'],
+        skip: 20,
+        take: 10,
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should filter classes by teacherId when provided', async () => {
+      classesRepository.findAndCount.mockResolvedValue([[mockClass], 1]);
+
+      const result = await service.findAll(1, 10, false, 'teacher-uuid');
+
+      expect(result).toEqual({
+        data: [mockClass],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      });
+      expect(classesRepository.findAndCount).toHaveBeenCalledWith({
+        where: { isActive: true, teacher: { id: 'teacher-uuid' } },
+        relations: ['teacher', 'enrolledStudents'],
+        skip: 0,
+        take: 10,
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should filter by teacherId with includeInactive', async () => {
+      const inactiveClass = { ...mockClass, isActive: false };
+      classesRepository.findAndCount.mockResolvedValue([
+        [mockClass, inactiveClass],
+        2,
+      ]);
+
+      const result = await service.findAll(1, 10, true, 'teacher-uuid');
+
+      expect(result).toEqual({
+        data: [mockClass, inactiveClass],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 2,
+          totalPages: 1,
+        },
+      });
+      expect(classesRepository.findAndCount).toHaveBeenCalledWith({
+        where: { teacher: { id: 'teacher-uuid' } },
+        relations: ['teacher', 'enrolledStudents'],
+        skip: 0,
+        take: 10,
+        order: { createdAt: 'DESC' },
       });
     });
   });
@@ -191,26 +301,16 @@ describe('ClassesService', () => {
       days: [2, 4],
       startTime: '20:00',
       durationMinutes: 90,
-      teacherId: 'new-teacher-uuid',
     };
 
     it('should update the class details', async () => {
-      const newTeacher = {
-        id: 'new-teacher-uuid',
-        name: 'New Sensei',
-        roles: [{ id: '3', role: UserRoleType.TEACHER }],
-        isActive: true,
-      } as User;
-
       classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.getTeacher.mockResolvedValue(newTeacher);
       classesRepository.save.mockResolvedValue({
         ...mockClass,
         name: updateClassDto.name,
         days: updateClassDto.days,
         startTime: updateClassDto.startTime,
         durationMinutes: updateClassDto.durationMinutes,
-        teacher: newTeacher,
       });
 
       const result = await service.update('class-uuid', updateClassDto);
@@ -221,20 +321,17 @@ describe('ClassesService', () => {
         days: updateClassDto.days,
         startTime: updateClassDto.startTime,
         durationMinutes: updateClassDto.durationMinutes,
-        teacher: newTeacher,
       });
       expect(classesRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'class-uuid' },
         relations: ['teacher', 'enrolledStudents'],
       });
-      expect(usersService.getTeacher).toHaveBeenCalledWith('new-teacher-uuid');
       expect(classesRepository.save).toHaveBeenCalledWith({
         ...mockClass,
         name: updateClassDto.name,
         days: updateClassDto.days,
         startTime: updateClassDto.startTime,
         durationMinutes: updateClassDto.durationMinutes,
-        teacher: newTeacher,
       });
     });
 
@@ -274,17 +371,6 @@ describe('ClassesService', () => {
 
       await expect(
         service.update('class-uuid', { name: 'New Name' }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should propagate NotFoundException when teacher not found', async () => {
-      classesRepository.findOne.mockResolvedValue(mockClass);
-      usersService.getTeacher.mockRejectedValue(
-        new NotFoundException('Teacher not found'),
-      );
-
-      await expect(
-        service.update('class-uuid', { teacherId: 'invalid' }),
       ).rejects.toThrow(NotFoundException);
     });
   });

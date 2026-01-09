@@ -47,7 +47,12 @@ export class FindAllClassSessionsDto {
     type: 'boolean',
   })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (typeof value === 'boolean') return value;
+    return undefined;
+  })
   @IsBoolean()
-  isActive?: boolean;
+  isActive?: string;
 }

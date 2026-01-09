@@ -57,31 +57,55 @@ describe('ClassesController', () => {
         days: [1, 3],
         startTime: '18:00',
         durationMinutes: 60,
-        teacherId: mockTeacher.id,
       };
 
       service.create.mockResolvedValue(mockClass);
 
-      const result = await controller.create(createClassDto);
+      const result = await controller.create(createClassDto, {
+        id: mockTeacher.id,
+      });
 
-      expect(service.create).toHaveBeenCalledWith(createClassDto);
+      expect(service.create).toHaveBeenCalledWith(
+        createClassDto,
+        mockTeacher.id,
+      );
       expect(result).toBe(mockClass);
     });
   });
 
   describe('findAll', () => {
-    it('should call service.findAll with correct parameters', async () => {
-      service.findAll.mockResolvedValue([mockClass]);
+    it('should call service.findAll with correct parameters including teacherId', async () => {
+      const paginatedResult = {
+        data: [mockClass],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      };
 
-      const result = await controller.findAll({});
-      expect(service.findAll).toHaveBeenCalledWith(undefined);
-      expect(result).toEqual([mockClass]);
+      service.findAll.mockResolvedValue(paginatedResult);
 
-      const resultWithInactive = await controller.findAll({
-        includeInactive: true,
-      });
-      expect(service.findAll).toHaveBeenCalledWith(true);
-      expect(resultWithInactive).toEqual([mockClass]);
+      const result = await controller.findAll({}, { id: mockTeacher.id });
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        mockTeacher.id,
+      );
+      expect(result).toEqual(paginatedResult);
+
+      const resultWithInactive = await controller.findAll(
+        {
+          includeInactive: 'true',
+          page: 2,
+          limit: 20,
+        },
+        { id: mockTeacher.id },
+      );
+      expect(service.findAll).toHaveBeenCalledWith(2, 20, true, mockTeacher.id);
+      expect(resultWithInactive).toEqual(paginatedResult);
     });
   });
 

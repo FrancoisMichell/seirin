@@ -21,8 +21,8 @@ import {
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
-import { IncludeInactiveDto } from 'src/common/dto/include-inactive.dto';
-import { Roles } from 'src/common/decorators';
+import { FindAllClassesDto } from './dto/find-all-classes.dto';
+import { Roles, CurrentUser } from 'src/common/decorators';
 import { UserRoleType } from 'src/common/enums';
 
 @ApiTags('classes')
@@ -40,18 +40,31 @@ export class ClassesController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  create(@Body() createClassDto: CreateClassDto) {
-    return this.classesService.create(createClassDto);
+  create(
+    @Body() createClassDto: CreateClassDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.classesService.create(createClassDto, user.id);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all classes with optional filters' })
+  @ApiOperation({
+    summary: 'Get all classes with pagination and optional filters',
+  })
   @ApiResponse({
     status: 200,
-    description: 'List of classes',
+    description: 'Paginated list of classes',
   })
-  findAll(@Query() query: IncludeInactiveDto) {
-    return this.classesService.findAll(query.includeInactive);
+  findAll(
+    @Query() query: FindAllClassesDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.classesService.findAll(
+      query.page ?? 1,
+      query.limit ?? 10,
+      query.includeInactive as unknown as boolean,
+      user.id,
+    );
   }
 
   @Get(':id')
