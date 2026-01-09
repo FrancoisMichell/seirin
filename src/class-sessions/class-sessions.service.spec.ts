@@ -163,7 +163,7 @@ describe('ClassSessionsService', () => {
           class: { id: 'class-uuid' },
           teacher: { id: 'teacher-uuid' },
           date: Between(new Date('2024-01-01'), new Date('2024-01-31')),
-          isActive: true,
+          isActive: 'true',
         },
       });
     });

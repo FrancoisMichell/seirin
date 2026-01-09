@@ -104,7 +104,12 @@ describe('ClassesController', () => {
         },
         { id: mockTeacher.id },
       );
-      expect(service.findAll).toHaveBeenCalledWith(2, 20, true, mockTeacher.id);
+      expect(service.findAll).toHaveBeenCalledWith(
+        2,
+        20,
+        'true',
+        mockTeacher.id,
+      );
       expect(resultWithInactive).toEqual(paginatedResult);
     });
   });
