@@ -89,7 +89,7 @@ export class ClassSessionsService {
     teacherId?: string;
     startDate?: Date;
     endDate?: Date;
-    isActive?: boolean;
+    isActive?: string;
   }): Promise<ClassSession[]> {
     const query: {
       relations: string[];

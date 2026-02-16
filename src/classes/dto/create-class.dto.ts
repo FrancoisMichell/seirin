@@ -6,23 +6,15 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
-  IsUUID,
   Matches,
   Max,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { DayOfWeek } from 'src/common/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateClassDto {
-  @ApiProperty({
-    description: 'UUID of the teacher responsible for the class',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  teacherId: string;
-
   @ApiProperty({
     description: 'Name of the class/turma',
     example: 'Jiu-Jitsu Iniciante',
@@ -41,6 +33,18 @@ export class CreateClassDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(7)
   @IsEnum(DayOfWeek, { each: true })
+  @Transform(
+    ({ value }) => {
+      if (Array.isArray(value)) {
+        return value.map((day: string) => {
+          const parsed = parseInt(day, 10);
+          return (isNaN(parsed) ? day : parsed) as DayOfWeek;
+        });
+      }
+      return value as DayOfWeek;
+    },
+    { toClassOnly: true },
+  )
   days: DayOfWeek[];
 
   @ApiProperty({

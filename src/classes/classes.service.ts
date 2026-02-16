@@ -6,6 +6,7 @@ import {
 import { CreateClassDto } from './dto/create-class.dto';
 import { PostgresErrorCode } from 'src/common/constants/postgres-error-codes';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { PaginatedResponse } from 'src/common/interfaces';
 import { UsersService } from 'src/users/users.service';
 import { Repository } from 'typeorm';
 import { Class } from './entities/class.entity';
@@ -20,11 +21,9 @@ export class ClassesService {
     private usersService: UsersService,
   ) {}
 
-  async create(createClassDto: CreateClassDto) {
+  async create(createClassDto: CreateClassDto, teacherId: string) {
     try {
-      const teacher = await this.usersService.getTeacher(
-        createClassDto.teacherId,
-      );
+      const teacher = await this.usersService.getTeacher(teacherId);
 
       const newClass = this.classRepository.create({
         ...createClassDto,
@@ -43,15 +42,41 @@ export class ClassesService {
     }
   }
 
-  findAll(includeInactive = false) {
-    const query: { relations: string[]; where?: { isActive: boolean } } = {
-      relations: ['teacher', 'enrolledStudents'],
-    };
+  async findAll(
+    page = 1,
+    limit = 10,
+    includeInactive = false,
+    teacherId?: string,
+  ): Promise<PaginatedResponse<Class>> {
+    const where: { isActive?: boolean; teacher?: { id: string } } = {};
 
     if (!includeInactive) {
-      query.where = { isActive: true };
+      where.isActive = true;
     }
-    return this.classRepository.find(query);
+
+    if (teacherId) {
+      where.teacher = { id: teacherId };
+    }
+
+    const [data, total] = await this.classRepository.findAndCount({
+      where: Object.keys(where).length > 0 ? where : undefined,
+      relations: ['teacher', 'enrolledStudents'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   }
 
   async findOne(id: string) {
@@ -83,13 +108,6 @@ export class ClassesService {
   async update(id: string, updateClassDto: UpdateClassDto) {
     try {
       const classEntity = await this.findOne(id);
-
-      if (updateClassDto.teacherId) {
-        const teacher = await this.usersService.getTeacher(
-          updateClassDto.teacherId,
-        );
-        classEntity.teacher = teacher;
-      }
 
       EntityUtil.updateFields(classEntity, updateClassDto, ['teacherId']);
 
